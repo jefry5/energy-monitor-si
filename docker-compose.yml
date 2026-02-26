@@ -1,38 +1,4 @@
 services:
-  # n8n: Orquestador de flujos
-  n8n:
-    image: n8nio/n8n:latest
-    container_name: n8n
-    restart: unless-stopped
-    ports:
-      - "5678:5678"
-    environment:
-      - N8N_BASIC_AUTH_ACTIVE=${N8N_BASIC_AUTH_ACTIVE}
-      - N8N_BASIC_AUTH_USER=${N8N_BASIC_AUTH_USER}
-      - N8N_BASIC_AUTH_PASSWORD=${N8N_BASIC_AUTH_PASSWORD}
-      - N8N_BLOCK_ENV_ACCESS_IN_NODE=false
-      - GENERIC_TIMEZONE=${GENERIC_TIMEZONE}
-      - GEMINI_API_KEY=${GEMINI_API_KEY}
-      - TELEGRAM_TOKEN=${TELEGRAM_TOKEN}
-      - TELEGRAM_CHAT_ID=${TELEGRAM_CHAT_ID}
-      - INFLUXDB_URL=${INFLUXDB_URL}
-      - INFLUXDB_TOKEN=${INFLUXDB_TOKEN}
-      - INFLUXDB_ORG=${INFLUXDB_ORG}
-      - INFLUXDB_BUCKET=${INFLUXDB_BUCKET}
-      - POSTGRES_DB=${POSTGRES_DB}
-      - POSTGRES_USER=${POSTGRES_USER}
-      - POSTGRES_PASSWORD=${POSTGRES_PASSWORD}
-      - WARMUP_READINGS=${WARMUP_READINGS}
-    volumes:
-      - ./n8n/data:/home/node/.n8n
-      - ./n8n/workflows:/home/node/workflows
-    depends_on:
-      - influxdb
-      - postgres
-      - mosquitto
-    networks:
-      - energia-net
-
   # InfluxDB: Base de datos de series de tiempo
   influxdb:
     image: influxdb:2.7
@@ -83,29 +49,9 @@ services:
     networks:
       - energia-net
 
-  # Grafana: Visualización y dashboards
-  grafana:
-    image: grafana/grafana:latest
-    container_name: grafana
-    restart: unless-stopped
-    ports:
-      - "3000:3000"
-    environment:
-      - GF_SECURITY_ADMIN_USER=admin
-      - GF_SECURITY_ADMIN_PASSWORD=admin123
-    volumes:
-      - grafana_data:/var/lib/grafana
-      - ./grafana/provisioning:/etc/grafana/provisioning
-    depends_on:
-      - influxdb
-      - postgres
-    networks:
-      - energia-net
-
 volumes:
   influxdb_data:
   postgres_data:
-  grafana_data:
 
 networks:
   energia-net:

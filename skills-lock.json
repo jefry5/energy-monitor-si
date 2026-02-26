@@ -1,0 +1,35 @@
+{
+  "version": 1,
+  "skills": {
+    "energy-management": {
+      "source": "oldwinter/skills",
+      "sourceType": "github",
+      "computedHash": "799b30cf816d7787497adde3d505b10d85d28491c8ba980f74bca43efaaf14e0"
+    },
+    "find-skills": {
+      "source": "vercel-labs/skills",
+      "sourceType": "github",
+      "computedHash": "25872a21881a950edc3db1f3329664d60405d539660ce05b3265db2de06a7dfd"
+    },
+    "langchain": {
+      "source": "davila7/claude-code-templates",
+      "sourceType": "github",
+      "computedHash": "35c093146e1c0147709a900eef682b79c1cbda35d895c967039c4bd646684cf2"
+    },
+    "llm-application-dev-langchain-agent": {
+      "source": "sickn33/antigravity-awesome-skills",
+      "sourceType": "github",
+      "computedHash": "ca342529e281e6d5fab9c6a8f09bd5f1fa461744e8249d2968a9a64b3cf3c56d"
+    },
+    "python-expert-best-practices-code-review": {
+      "source": "wispbit-ai/skills",
+      "sourceType": "github",
+      "computedHash": "67a70fe8a0eaee189bbbd4daf5a9c9afc623bf9eedd70d619e59d37826833f97"
+    },
+    "telegram-bot-builder": {
+      "source": "sickn33/antigravity-awesome-skills",
+      "sourceType": "github",
+      "computedHash": "0ba2dc11834273001a29cf1424a6058f432469c4e62f5d5ff2d7daf1f5e49d90"
+    }
+  }
+}

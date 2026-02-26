@@ -36,9 +36,20 @@ CREATE TABLE
         ultima_vez TIMESTAMPTZ NOT NULL DEFAULT NOW ()
     );
 
+-- Tabla de historial detallado de energía (Series de tiempo en Postgres)
+CREATE TABLE
+    IF NOT EXISTS energy_history (
+        id SERIAL PRIMARY KEY,
+        timestamp TIMESTAMPTZ NOT NULL DEFAULT NOW (),
+        area VARCHAR(100) NOT NULL,
+        reading DECIMAL(10, 4) NOT NULL,
+        ema DECIMAL(10, 4) NOT NULL,
+        severity VARCHAR(20) NOT NULL DEFAULT 'Normal'
+    );
+
 --Índices para queries rápidas
 CREATE INDEX IF NOT EXISTS idx_anomalias_timestamp ON anomalias (timestamp DESC);
-
 CREATE INDEX IF NOT EXISTS idx_anomalias_area ON anomalias (area);
-
 CREATE INDEX IF NOT EXISTS idx_anomalias_severidad ON anomalias (severidad);
+CREATE INDEX IF NOT EXISTS idx_history_timestamp ON energy_history (timestamp DESC);
+CREATE INDEX IF NOT EXISTS idx_history_area ON energy_history (area);

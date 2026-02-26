@@ -1,0 +1,1508 @@
+{
+  "name": "Energía-Monitor-Pro-v2",
+  "nodes": [
+    {
+      "parameters": {
+        "updates": [
+          "message",
+          "callback_query"
+        ]
+      },
+      "type": "n8n-nodes-base.telegramTrigger",
+      "typeVersion": 1,
+      "position": [
+        -600,
+        500
+      ],
+      "id": "telegram-trigger-id",
+      "name": "Telegram Trigger",
+      "credentials": {
+        "telegramApi": {
+          "id": "new-telegram-cred-id",
+          "name": "Energy Monitor Bot"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "// Sanitizar y extraer datos del mensaje de Telegram\nconst item = $input.first().json;\nconst msg = item.message;\nconst cb  = item.callback_query;\n\nconst text     = msg?.text || cb?.data || '';\nconst chat_id  = msg?.chat?.id || cb?.message?.chat?.id || cb?.from?.id;\nconst username = msg?.from?.username || cb?.from?.username || 'usuario';\nconst first    = msg?.from?.first_name || cb?.from?.first_name || 'Usuario';\n\nreturn [{ json: {\n  raw: item,\n  text,\n  chat_id,\n  username,\n  first_name: first,\n  is_callback: !!cb,\n  callback_id: cb?.id || null,\n  message_id: msg?.message_id || cb?.message?.message_id || null,\n  timestamp: new Date().toISOString()\n}}];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -400,
+        500
+      ],
+      "id": "normalize-input-id",
+      "name": "Normalizar Input"
+    },
+    {
+      "parameters": {
+        "rules": {
+          "values": [
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": false,
+                  "typeValidation": "strict",
+                  "version": 3
+                },
+                "conditions": [
+                  {
+                    "id": "c1",
+                    "leftValue": "={{ $json.text }}",
+                    "rightValue": "/start",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals"
+                    }
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "Menu"
+            },
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": false,
+                  "typeValidation": "strict",
+                  "version": 3
+                },
+                "conditions": [
+                  {
+                    "id": "c2",
+                    "leftValue": "={{ $json.text }}",
+                    "rightValue": "get_report",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals"
+                    }
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "Reporte"
+            },
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": false,
+                  "typeValidation": "strict",
+                  "version": 3
+                },
+                "conditions": [
+                  {
+                    "id": "c3",
+                    "leftValue": "={{ $json.text }}",
+                    "rightValue": "get_status",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals"
+                    }
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "Estado"
+            },
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": false,
+                  "typeValidation": "strict",
+                  "version": 3
+                },
+                "conditions": [
+                  {
+                    "id": "c4",
+                    "leftValue": "={{ $json.text }}",
+                    "rightValue": "get_anomalias",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals"
+                    }
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "Anomalias"
+            },
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": false,
+                  "typeValidation": "strict",
+                  "version": 3
+                },
+                "conditions": [
+                  {
+                    "id": "c5",
+                    "leftValue": "={{ $json.text }}",
+                    "rightValue": "get_prediccion",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals"
+                    }
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "Prediccion"
+            },
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": false,
+                  "typeValidation": "strict",
+                  "version": 3
+                },
+                "conditions": [
+                  {
+                    "id": "c6",
+                    "leftValue": "={{ $json.text }}",
+                    "rightValue": "/ai",
+                    "operator": {
+                      "type": "string",
+                      "operation": "startsWith"
+                    }
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "AI_Chat"
+            },
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": false,
+                  "typeValidation": "strict",
+                  "version": 3
+                },
+                "conditions": [
+                  {
+                    "id": "c7",
+                    "leftValue": "={{ $json.text }}",
+                    "rightValue": "get_exportar",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals"
+                    }
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "Exportar"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.switch",
+      "typeVersion": 3.4,
+      "position": [
+        -150,
+        500
+      ],
+      "id": "router-id",
+      "name": "Router Principal"
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "=https://api.telegram.org/bot{{ $env.TELEGRAM_TOKEN }}/sendMessage",
+        "sendBody": true,
+        "bodyParameters": {
+          "parameters": [
+            {
+              "name": "chat_id",
+              "value": "={{ $('Normalizar Input').first().json.chat_id }}"
+            },
+            {
+              "name": "text",
+              "value": "=🏛️ <b>CENTRO DE CONTROL ENERGÉTICO</b>\n━━━━━━━━━━━━━━━━━━━━\n👋 Hola, <b>{{ $('Normalizar Input').first().json.first_name }}</b>!\n\n🕒 <i>{{ new Date().toLocaleString('es-ES', {timeZone:'America/Lima'}) }}</i>\n\nSelecciona una opción del panel de control:"
+            },
+            {
+              "name": "parse_mode",
+              "value": "HTML"
+            },
+            {
+              "name": "reply_markup",
+              "value": "={{ JSON.stringify({ inline_keyboard: [ [{text:'📊 Reporte 24h', callback_data:'get_report'}, {text:'⚡ Estado en Vivo', callback_data:'get_status'}], [{text:'🚨 Anomalías Recientes', callback_data:'get_anomalias'}, {text:'🔮 Predicción IA', callback_data:'get_prediccion'}], [{text:'📁 Exportar CSV', callback_data:'get_exportar'}, {text:'🤖 Consultar IA', callback_data:'/ai Dame un resumen'}] ] }) }}"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.4,
+      "position": [
+        100,
+        200
+      ],
+      "id": "send-menu-id",
+      "name": "Enviar Menú Principal"
+    },
+    {
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "SELECT\n  area,\n  ROUND(SUM(reading)::numeric, 2)                          AS total_kwh,\n  ROUND(AVG(reading)::numeric, 2)                          AS promedio_kwh,\n  ROUND(MAX(reading)::numeric, 2)                          AS pico_kwh,\n  ROUND(MIN(reading)::numeric, 2)                          AS minimo_kwh,\n  COUNT(*)                                                  AS lecturas,\n  MAX(severity)                                             AS estado_max\nFROM energy_history\nWHERE timestamp >= NOW() - INTERVAL '24 hours'\nGROUP BY area\nORDER BY total_kwh DESC;",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.6,
+      "position": [
+        100,
+        380
+      ],
+      "id": "get-report-id",
+      "name": "Obtener Reporte 24h",
+      "credentials": {
+        "postgres": {
+          "id": "new-postgres-cred-id",
+          "name": "Postgres local"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "const rows = $input.all().map(i => i.json);\nconst totalGlobal = rows.reduce((s, r) => s + Number(r.total_kwh), 0);\nconst costoEstimado = (totalGlobal * 0.18).toFixed(2);\nconst co2Estimado = (totalGlobal * 0.233).toFixed(2);\n\nconst severityIcon = { Normal: '✅', Warning: '⚠️', Critical: '🚨' };\n\nlet msg = `📊 <b>REPORTE ENERGÉTICO — ÚLTIMAS 24H</b>\\n━━━━━━━━━━━━━━━━━━━━\\n`;\nmsg += `🕒 <i>${new Date().toLocaleString('es-ES', {timeZone:'America/Lima'})}</i>\\n\\n`;\n\nrows.forEach(r => {\n  const icon = severityIcon[r.estado_max] || '⚪';\n  msg += `${icon} <b>${r.area}</b>\\n`;\n  msg += `   ⚡ Total: <b>${r.total_kwh} kWh</b>\\n`;\n  msg += `   📈 Pico: ${r.pico_kwh} | Promedio: ${r.promedio_kwh} kWh\\n`;\n  msg += `   📉 Mínimo: ${r.minimo_kwh} kWh (${r.lecturas} lecturas)\\n\\n`;\n});\n\nmsg += `━━━━━━━━━━━━━━━━━━━━\\n`;\nmsg += `🏭 <b>RESUMEN GLOBAL</b>\\n`;\nmsg += `⚡ Total: <b>${totalGlobal.toFixed(2)} kWh</b>\\n`;\nmsg += `💰 Costo estimado: <b>S/. ${costoEstimado}</b>\\n`;\nmsg += `🌱 CO₂ emitido: <b>${co2Estimado} kg</b>\\n\\n`;\nmsg += `🤖 <i>Sistema de Monitoreo Inteligente v2</i>`;\n\nreturn [{ json: { text: msg, chat_id: $('Normalizar Input').first().json.chat_id } }];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        300,
+        380
+      ],
+      "id": "format-report-id",
+      "name": "Formatear Reporte"
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "=https://api.telegram.org/bot{{ $env.TELEGRAM_TOKEN }}/sendMessage",
+        "sendBody": true,
+        "bodyParameters": {
+          "parameters": [
+            {
+              "name": "chat_id",
+              "value": "={{ $json.chat_id }}"
+            },
+            {
+              "name": "text",
+              "value": "={{ $json.text }}"
+            },
+            {
+              "name": "parse_mode",
+              "value": "HTML"
+            },
+            {
+              "name": "reply_markup",
+              "value": "={{ JSON.stringify({ inline_keyboard: [[{text:'⬅️ Volver al Menú', callback_data:'/start'}, {text:'🔄 Actualizar', callback_data:'get_report'}]] }) }}"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.4,
+      "position": [
+        500,
+        380
+      ],
+      "id": "send-report-id",
+      "name": "Enviar Reporte"
+    },
+    {
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "SELECT\n  e.area,\n  e.reading                                          AS actual,\n  e.ema                                              AS promedio,\n  e.severity                                         AS estado,\n  ROUND(((e.reading - e.ema) / NULLIF(e.ema,0) * 100)::numeric, 1) AS desviacion_pct,\n  to_char(e.timestamp, 'HH24:MI:SS')                 AS hora,\n  (SELECT COUNT(*) FROM anomalias a\n   WHERE a.area = e.area\n     AND a.timestamp >= NOW() - INTERVAL '1 hour')   AS alertas_1h\nFROM energy_history e\nWHERE (e.area, e.timestamp) IN (\n    SELECT area, MAX(timestamp)\n    FROM energy_history GROUP BY area\n)\nORDER BY ABS((e.reading - e.ema) / NULLIF(e.ema,0)) DESC;",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.6,
+      "position": [
+        100,
+        560
+      ],
+      "id": "get-status-id",
+      "name": "Obtener Status Áreas",
+      "credentials": {
+        "postgres": {
+          "id": "new-postgres-cred-id",
+          "name": "Postgres local"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "const rows = $input.all().map(i => i.json);\nconst sIcon = { Normal: '✅', Warning: '⚠️', Critical: '🚨' };\nconst barChar = (pct) => {\n  const p = Math.min(Math.max(pct, 0), 100);\n  const filled = Math.round(p / 10);\n  return '█'.repeat(filled) + '░'.repeat(10 - filled) + ` ${p.toFixed(0)}%`;\n};\n\nlet msg = `⚡ <b>ESTADO EN TIEMPO REAL</b>\\n━━━━━━━━━━━━━━━━━━━━\\n`;\nmsg += `🕒 <i>${new Date().toLocaleString('es-ES', {timeZone:'America/Lima'})}</i>\\n\\n`;\n\nrows.forEach(r => {\n  const icon = sIcon[r.estado] || '⚪';\n  const dev = Number(r.desviacion_pct) || 0;\n  const devStr = dev >= 0 ? `+${dev}%` : `${dev}%`;\n  const alertBadge = r.alertas_1h > 0 ? ` 🔔(${r.alertas_1h})` : '';\n  msg += `${icon} <b>${r.area}</b>${alertBadge}\\n`;\n  msg += `   ⚡ ${r.actual.toFixed(2)} kWh @ ${r.hora}\\n`;\n  msg += `   📊 ${barChar(Math.abs(dev))}\\n`;\n  msg += `   📈 EMA: ${r.promedio.toFixed(2)} kWh | Δ <b>${devStr}</b>\\n\\n`;\n});\n\nmsg += `🤖 <i>Actualización automática cada 30s</i>`;\n\nreturn [{ json: { text: msg, chat_id: $('Normalizar Input').first().json.chat_id } }];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        300,
+        560
+      ],
+      "id": "format-status-id",
+      "name": "Formatear Status"
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "=https://api.telegram.org/bot{{ $env.TELEGRAM_TOKEN }}/sendMessage",
+        "sendBody": true,
+        "bodyParameters": {
+          "parameters": [
+            {
+              "name": "chat_id",
+              "value": "={{ $json.chat_id }}"
+            },
+            {
+              "name": "text",
+              "value": "={{ $json.text }}"
+            },
+            {
+              "name": "parse_mode",
+              "value": "HTML"
+            },
+            {
+              "name": "reply_markup",
+              "value": "={{ JSON.stringify({ inline_keyboard: [[{text:'🔄 Actualizar', callback_data:'get_status'}, {text:'⬅️ Menú', callback_data:'/start'}]] }) }}"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.4,
+      "position": [
+        500,
+        560
+      ],
+      "id": "send-status-id",
+      "name": "Enviar Status"
+    },
+    {
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "SELECT\n  a.id,\n  a.area,\n  a.severidad,\n  ROUND(a.valor_kwh::numeric, 2)      AS valor_kwh,\n  ROUND(a.ema_kwh::numeric, 2)        AS ema_kwh,\n  ROUND(a.desviacion::numeric, 1)     AS desviacion,\n  a.recomendacion,\n  to_char(a.timestamp, 'DD/MM HH24:MI') AS cuando\nFROM anomalias a\nWHERE a.timestamp >= NOW() - INTERVAL '6 hours'\nORDER BY a.timestamp DESC\nLIMIT 10;",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.6,
+      "position": [
+        100,
+        740
+      ],
+      "id": "get-anomalias-id",
+      "name": "Obtener Anomalías",
+      "credentials": {
+        "postgres": {
+          "id": "new-postgres-cred-id",
+          "name": "Postgres local"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "const rows = $input.all().map(i => i.json);\nconst sIcon = { Critico: '🔴', Advertencia: '🟠', Normal: '🟢' };\n\nif (rows.length === 0) {\n  return [{ json: { text: '✅ <b>Sin anomalías en las últimas 6 horas.</b>\\n\\n🤖 <i>Sistema operando normalmente.</i>', chat_id: $('Normalizar Input').first().json.chat_id } }];\n}\n\nlet msg = `🚨 <b>ANOMALÍAS — ÚLTIMAS 6H</b>\\n━━━━━━━━━━━━━━━━━━━━\\n\\n`;\n\nrows.forEach((r, idx) => {\n  const icon = sIcon[r.severidad] || '⚪';\n  let rec = {};\n  try { rec = JSON.parse(r.recomendacion.replace(/```json|```/g, '')); } catch(e) { rec = {causa:'N/D', accion:'Verificar manualmente', prioridad:'Media'}; }\n  msg += `${icon} <b>#${idx+1} ${r.area}</b> — <code>${r.cuando}</code>\\n`;\n  msg += `   ⚡ ${r.valor_kwh} kWh (EMA: ${r.ema_kwh} | Δ${r.desviacion}%)\\n`;\n  msg += `   🧩 ${rec.causa || 'Sin diagnóstico'}\\n`;\n  msg += `   🛠️ ${rec.accion || 'Revisar'}\\n\\n`;\n});\n\nmsg += `━━━━━━━━━━━━━━━━━━━━\\n🤖 <i>Diagnóstico por Google Gemini</i>`;\n\nreturn [{ json: { text: msg, chat_id: $('Normalizar Input').first().json.chat_id } }];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        300,
+        740
+      ],
+      "id": "format-anomalias-id",
+      "name": "Formatear Anomalías"
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "=https://api.telegram.org/bot{{ $env.TELEGRAM_TOKEN }}/sendMessage",
+        "sendBody": true,
+        "bodyParameters": {
+          "parameters": [
+            {
+              "name": "chat_id",
+              "value": "={{ $json.chat_id }}"
+            },
+            {
+              "name": "text",
+              "value": "={{ $json.text }}"
+            },
+            {
+              "name": "parse_mode",
+              "value": "HTML"
+            },
+            {
+              "name": "reply_markup",
+              "value": "={{ JSON.stringify({ inline_keyboard: [[{text:'🔄 Actualizar', callback_data:'get_anomalias'}, {text:'⬅️ Menú', callback_data:'/start'}]] }) }}"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.4,
+      "position": [
+        500,
+        740
+      ],
+      "id": "send-anomalias-id",
+      "name": "Enviar Anomalías"
+    },
+    {
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "SELECT\n  area,\n  ROUND(AVG(reading)::numeric, 2)  AS promedio_kwh,\n  ROUND(STDDEV(reading)::numeric, 2) AS desviacion_std,\n  ROUND(MAX(reading)::numeric, 2)  AS pico_historico,\n  COUNT(*)                          AS total_lecturas,\n  to_char(MAX(timestamp),'DD/MM HH24:MI') AS ultima_lectura\nFROM energy_history\nWHERE timestamp >= NOW() - INTERVAL '7 days'\nGROUP BY area\nORDER BY promedio_kwh DESC;",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.6,
+      "position": [
+        100,
+        920
+      ],
+      "id": "get-prediccion-data-id",
+      "name": "Datos para Predicción",
+      "credentials": {
+        "postgres": {
+          "id": "new-postgres-cred-id",
+          "name": "Postgres local"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "=Eres un experto en análisis predictivo de energía eléctrica en edificios universitarios.\n\nDatos históricos de los últimos 7 días por área:\n{{ $input.all().map(i => `- ${i.json.area}: Promedio=${i.json.promedio_kwh} kWh, STD=${i.json.desviacion_std}, Pico=${i.json.pico_historico} kWh, Lecturas=${i.json.total_lecturas}`).join('\\n') }}\n\nResponde ÚNICAMENTE con este JSON (sin markdown):\n{\n  \"prediccion_proximas_24h\": [\n    {\"area\": \"nombre\", \"kwh_esperado\": 0.0, \"riesgo\": \"Bajo|Medio|Alto\", \"motivo\": \"breve\"}\n  ],\n  \"area_mayor_riesgo\": \"nombre\",\n  \"recomendacion_global\": \"texto breve\",\n  \"ahorro_potencial_pct\": 0\n}",
+        "messages": {
+          "messageValues": [
+            {
+              "message": "Actúa como motor de predicción JSON. Solo responde el objeto JSON, sin texto adicional."
+            }
+          ]
+        },
+        "batching": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.chainLlm",
+      "typeVersion": 1.9,
+      "position": [
+        300,
+        920
+      ],
+      "id": "prediccion-llm-id",
+      "name": "LLM Predicción"
+    },
+    {
+      "parameters": {
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatGoogleGemini",
+      "typeVersion": 1,
+      "position": [
+        300,
+        1080
+      ],
+      "id": "gemini-prediccion-id",
+      "name": "Gemini Predicción",
+      "credentials": {
+        "googlePalmApi": {
+          "id": "KCTdNJeeCP1jXUX5",
+          "name": "Google Gemini(PaLM) Api account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "const raw = $input.first().json.text || $input.first().json.output || '{}';\nlet pred;\ntry { pred = JSON.parse(raw.replace(/```json|```/g,'')); } catch(e) { pred = { prediccion_proximas_24h:[], recomendacion_global:'Error al procesar', ahorro_potencial_pct:0 }; }\n\nconst riesgoIcon = { Bajo:'🟢', Medio:'🟡', Alto:'🔴' };\n\nlet msg = `🔮 <b>PREDICCIÓN IA — PRÓXIMAS 24H</b>\\n━━━━━━━━━━━━━━━━━━━━\\n\\n`;\n\n(pred.prediccion_proximas_24h || []).forEach(p => {\n  const icon = riesgoIcon[p.riesgo] || '⚪';\n  msg += `${icon} <b>${p.area}</b>\\n`;\n  msg += `   ⚡ Esperado: <b>${p.kwh_esperado} kWh</b>\\n`;\n  msg += `   ⚠️ Riesgo: ${p.riesgo}\\n`;\n  msg += `   💡 ${p.motivo}\\n\\n`;\n});\n\nif (pred.area_mayor_riesgo) {\n  msg += `━━━━━━━━━━━━━━━━━━━━\\n🔥 <b>Área crítica:</b> ${pred.area_mayor_riesgo}\\n`;\n}\nmsg += `💡 <b>Recomendación:</b> ${pred.recomendacion_global}\\n`;\nmsg += `💰 <b>Ahorro potencial:</b> ${pred.ahorro_potencial_pct}%\\n\\n`;\nmsg += `🤖 <i>Análisis predictivo por Google Gemini</i>`;\n\nreturn [{ json: { text: msg, chat_id: $('Normalizar Input').first().json.chat_id } }];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        500,
+        920
+      ],
+      "id": "format-prediccion-id",
+      "name": "Formatear Predicción"
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "=https://api.telegram.org/bot{{ $env.TELEGRAM_TOKEN }}/sendMessage",
+        "sendBody": true,
+        "bodyParameters": {
+          "parameters": [
+            {
+              "name": "chat_id",
+              "value": "={{ $json.chat_id }}"
+            },
+            {
+              "name": "text",
+              "value": "={{ $json.text }}"
+            },
+            {
+              "name": "parse_mode",
+              "value": "HTML"
+            },
+            {
+              "name": "reply_markup",
+              "value": "={{ JSON.stringify({ inline_keyboard: [[{text:'⬅️ Menú', callback_data:'/start'}]] }) }}"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.4,
+      "position": [
+        700,
+        920
+      ],
+      "id": "send-prediccion-id",
+      "name": "Enviar Predicción"
+    },
+    {
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "SELECT\n  area,\n  ROUND(reading::numeric,4)           AS kwh,\n  ROUND(ema::numeric,4)               AS ema,\n  severity                             AS estado,\n  to_char(timestamp,'YYYY-MM-DD HH24:MI:SS') AS timestamp\nFROM energy_history\nWHERE timestamp >= NOW() - INTERVAL '24 hours'\nORDER BY area, timestamp ASC;",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.6,
+      "position": [
+        100,
+        1100
+      ],
+      "id": "get-export-data-id",
+      "name": "Datos para Exportar",
+      "credentials": {
+        "postgres": {
+          "id": "new-postgres-cred-id",
+          "name": "Postgres local"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "const rows = $input.all().map(i => i.json);\n\n// Generar CSV\nconst header = 'timestamp,area,kwh,ema,estado';\nconst csvRows = rows.map(r => `${r.timestamp},${r.area},${r.kwh},${r.ema},${r.estado}`);\nconst csv = [header, ...csvRows].join('\\n');\n\n// Convertir a base64\nconst base64 = Buffer.from(csv, 'utf-8').toString('base64');\n\nreturn [{ json: { csv_base64: base64, total_rows: rows.length, chat_id: $('Normalizar Input').first().json.chat_id } }];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        300,
+        1100
+      ],
+      "id": "generate-csv-id",
+      "name": "Generar CSV"
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "=https://api.telegram.org/bot{{ $env.TELEGRAM_TOKEN }}/sendDocument",
+        "sendBody": true,
+        "contentType": "multipart-form-data",
+        "bodyParameters": {
+          "parameters": [
+            {
+              "name": "chat_id",
+              "value": "={{ $json.chat_id }}"
+            },
+            {
+              "name": "caption",
+              "value": "=📁 <b>Exportación Energética — Últimas 24h</b>\\n📊 {{ $json.total_rows }} registros exportados\\n🤖 <i>Sistema de Monitoreo v2</i>"
+            },
+            {
+              "name": "parse_mode",
+              "value": "HTML"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.4,
+      "position": [
+        500,
+        1100
+      ],
+      "id": "send-export-id",
+      "name": "Enviar CSV"
+    },
+    {
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "SELECT\n  area,\n  ROUND(reading::numeric,2) AS kwh,\n  ROUND(ema::numeric,2)     AS ema,\n  severity\nFROM energy_history\nWHERE (area, timestamp) IN (\n  SELECT area, MAX(timestamp) FROM energy_history GROUP BY area\n);",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.6,
+      "position": [
+        100,
+        1280
+      ],
+      "id": "get-context-ai-id",
+      "name": "Contexto BD para IA",
+      "credentials": {
+        "postgres": {
+          "id": "new-postgres-cred-id",
+          "name": "Postgres local"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "const rows = $input.all().map(i => i.json);\nconst userMsg = $('Normalizar Input').first().json.text.replace('/ai','').trim();\n\nconst contextStr = rows.map(r => `${r.area}: ${r.kwh} kWh (EMA: ${r.ema}, Estado: ${r.severity})`).join(', ');\n\nreturn [{ json: { prompt: userMsg, context: contextStr, chat_id: $('Normalizar Input').first().json.chat_id } }];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        300,
+        1280
+      ],
+      "id": "prepare-ai-prompt-id",
+      "name": "Preparar Prompt IA"
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "={{ $json.prompt || 'Dame un resumen del sistema' }}",
+        "messages": {
+          "messageValues": [
+            {
+              "message": "=Eres un experto en gestión energética de edificios universitarios. Tienes acceso a datos en tiempo real del sistema:\\n\\nESTADO ACTUAL: {{ $json.context }}\\n\\nResponde de forma concisa, profesional y en español. Máximo 3 párrafos. Si detectas algo crítico, menciona 'ACCIÓN URGENTE'."
+            }
+          ]
+        },
+        "batching": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.chainLlm",
+      "typeVersion": 1.9,
+      "position": [
+        500,
+        1280
+      ],
+      "id": "ai-chat-llm-id",
+      "name": "Chat IA con Contexto"
+    },
+    {
+      "parameters": {
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatGoogleGemini",
+      "typeVersion": 1,
+      "position": [
+        500,
+        1440
+      ],
+      "id": "gemini-chat-model-id",
+      "name": "Gemini Chat Model",
+      "credentials": {
+        "googlePalmApi": {
+          "id": "KCTdNJeeCP1jXUX5",
+          "name": "Google Gemini(PaLM) Api account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "=https://api.telegram.org/bot{{ $env.TELEGRAM_TOKEN }}/sendMessage",
+        "sendBody": true,
+        "bodyParameters": {
+          "parameters": [
+            {
+              "name": "chat_id",
+              "value": "={{ $('Preparar Prompt IA').first().json.chat_id }}"
+            },
+            {
+              "name": "text",
+              "value": "=🤖 <b>ASISTENTE IA — GEMINI</b>\\n━━━━━━━━━━━━━━━━━━━━\\n\\n{{ $json.text || $json.output }}\\n\\n🤖 <i>Analizado por Google Gemini Pro</i>"
+            },
+            {
+              "name": "parse_mode",
+              "value": "HTML"
+            },
+            {
+              "name": "reply_markup",
+              "value": "={{ JSON.stringify({ inline_keyboard: [[{text:'⬅️ Menú', callback_data:'/start'}]] }) }}"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.4,
+      "position": [
+        700,
+        1280
+      ],
+      "id": "send-ai-response-id",
+      "name": "Enviar Respuesta IA"
+    },
+    {
+      "parameters": {
+        "topics": "edificio/+/consumo"
+      },
+      "type": "n8n-nodes-base.mqttTrigger",
+      "typeVersion": 1,
+      "position": [
+        -600,
+        -200
+      ],
+      "id": "mqtt-trigger-id",
+      "name": "MQTT Trigger",
+      "credentials": {
+        "mqtt": {
+          "id": "mqtt-cred-id",
+          "name": "MQTT local"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "const item = $input.first().json;\nlet raw = item.message ?? item.body ?? item.payload ?? item;\nif (raw && typeof raw === 'object' && typeof raw.message === 'string') raw = raw.message;\n\nlet payload;\nif (typeof raw === 'string') {\n  try { payload = JSON.parse(raw); } catch(e) { throw new Error(`Payload no es JSON válido: ${raw}`); }\n} else { payload = raw; }\n\nconst area = payload.area;\nconst kwh  = Number(payload.kwh);\nconst timestamp = payload.timestamp || new Date().toISOString();\n\nif (!area) throw new Error('Falta \"area\" en el payload.');\nif (!Number.isFinite(kwh)) throw new Error(`\"kwh\" inválido: ${payload.kwh}`);\n\nreturn [{ json: { area, kwh: Number(kwh.toFixed(4)), timestamp, topic: item.topic ?? null, modo: payload.modo ?? 'normal' } }];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -380,
+        -200
+      ],
+      "id": "parsear-mqtt-id",
+      "name": "Parsear MQTT"
+    },
+    {
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "SELECT\n  COALESCE(e.ema_actual, {{ $json.kwh }}) AS ema_actual,\n  COALESCE(e.contador, 0)                 AS contador\nFROM (SELECT 1) AS dummy\nLEFT JOIN ema_estado e ON e.area = '{{ $json.area }}';",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.6,
+      "position": [
+        -160,
+        -200
+      ],
+      "id": "obtener-ema-id",
+      "name": "Obtener EMA",
+      "credentials": {
+        "postgres": {
+          "id": "Bibgu4bccT0Gca2c",
+          "name": "Postgres account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "const ALPHA  = 0.2;\nconst WARMUP = Number($env?.WARMUP_READINGS ?? 50);\n\nconst parsedData   = $('Parsear MQTT').first().json;\nconst area         = parsedData.area;\nconst kwh          = parsedData.kwh;\nconst timestamp    = parsedData.timestamp;\nconst ema_anterior = Number($input.first().json.ema_actual);\nconst contador_ant = Number($input.first().json.contador);\nconst es_primera   = contador_ant === 0;\n\nconst ema_nuevo    = es_primera ? kwh : ALPHA * kwh + (1 - ALPHA) * ema_anterior;\nconst contador_nuevo = contador_ant + 1;\nconst denom        = Math.abs(ema_nuevo) < 1e-9 ? 1e-9 : ema_nuevo;\nconst desviacion   = ((kwh - ema_nuevo) / denom) * 100;\nconst enCalentamiento = contador_nuevo <= WARMUP;\n\nlet severidad = 'Normal';\nif (!enCalentamiento && !es_primera) {\n  if      (desviacion > 50) severidad = 'Critico';\n  else if (desviacion > 20) severidad = 'Advertencia';\n}\n\nreturn [{ json: { area, kwh: Number(kwh.toFixed(4)), ema: Number(ema_nuevo.toFixed(4)), desviacion: Number(desviacion.toFixed(2)), severidad, enCalentamiento, es_primera_lectura: es_primera, lectura_num: contador_nuevo, timestamp, modo: parsedData.modo ?? 'normal' } }];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        60,
+        -200
+      ],
+      "id": "calcular-ema-id",
+      "name": "Calcular EMA"
+    },
+    {
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "INSERT INTO ema_estado (area, ema_actual, contador, ultima_vez)\nVALUES ('{{ $json.area }}', {{ $json.ema }}, {{ $json.lectura_num }}, NOW())\nON CONFLICT (area)\nDO UPDATE SET ema_actual = EXCLUDED.ema_actual, contador = EXCLUDED.contador, ultima_vez = NOW();",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.6,
+      "position": [
+        280,
+        -350
+      ],
+      "id": "guardar-ema-id",
+      "name": "Guardar EMA",
+      "credentials": {
+        "postgres": {
+          "id": "Bibgu4bccT0Gca2c",
+          "name": "Postgres account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "INSERT INTO energy_history (timestamp, area, reading, ema, severity)\nVALUES ('{{ $json.timestamp }}', '{{ $json.area }}', {{ $json.kwh }}, {{ $json.ema }}, '{{ $json.severidad }}')\nON CONFLICT DO NOTHING;",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.6,
+      "position": [
+        280,
+        -200
+      ],
+      "id": "guardar-history-id",
+      "name": "Guardar Historial",
+      "credentials": {
+        "postgres": {
+          "id": "Bibgu4bccT0Gca2c",
+          "name": "Postgres account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "rules": {
+          "values": [
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "typeValidation": "strict",
+                  "version": 3
+                },
+                "conditions": [
+                  {
+                    "id": "sc1",
+                    "leftValue": "={{ $json.desviacion > 50 }}",
+                    "rightValue": "={{ true }}",
+                    "operator": {
+                      "type": "boolean",
+                      "operation": "true",
+                      "singleValue": true
+                    }
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "Critico"
+            },
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "typeValidation": "strict",
+                  "version": 3
+                },
+                "conditions": [
+                  {
+                    "id": "sc2",
+                    "leftValue": "={{ $json.desviacion > 20 && $json.desviacion <= 50 }}",
+                    "rightValue": "={{ true }}",
+                    "operator": {
+                      "type": "boolean",
+                      "operation": "true",
+                      "singleValue": true
+                    }
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "Advertencia"
+            },
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "typeValidation": "strict",
+                  "version": 3
+                },
+                "conditions": [
+                  {
+                    "id": "sc3",
+                    "leftValue": "={{ $json.enCalentamiento === true || $json.desviacion <= 20 }}",
+                    "rightValue": "={{true}}",
+                    "operator": {
+                      "type": "boolean",
+                      "operation": "true",
+                      "singleValue": true
+                    }
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "Normal"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.switch",
+      "typeVersion": 3.4,
+      "position": [
+        500,
+        -200
+      ],
+      "id": "severity-switch-id",
+      "name": "Switch Severidad"
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "={{ $env.INFLUXDB_URL }}/api/v2/write",
+        "sendQuery": true,
+        "queryParameters": {
+          "parameters": [
+            {
+              "name": "org",
+              "value": "={{ $env.INFLUXDB_ORG }}"
+            },
+            {
+              "name": "bucket",
+              "value": "={{ $env.INFLUXDB_BUCKET }}"
+            },
+            {
+              "name": "precision",
+              "value": "s"
+            }
+          ]
+        },
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Authorization",
+              "value": "=Token {{ $env.INFLUXDB_TOKEN }}"
+            }
+          ]
+        },
+        "sendBody": true,
+        "contentType": "raw",
+        "rawContentType": "Text/Plain",
+        "body": "=consumo_energetico,area={{ $('Calcular EMA').item.json.area }} kwh={{ $('Calcular EMA').item.json.kwh }},ema={{ $('Calcular EMA').item.json.ema }},desviacion={{ $('Calcular EMA').item.json.desviacion }},severidad=\"{{ $('Calcular EMA').item.json.severidad }}\" {{ Math.floor(Date.now()/1000) }}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.4,
+      "position": [
+        720,
+        -350
+      ],
+      "id": "influx-write-id",
+      "name": "Escritura en InfluxDB"
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "=Eres un experto en eficiencia energética de edificios universitarios.\nSe detectó una anomalía de consumo eléctrico:\n- Área: {{ $json.area }}\n- Consumo Actual: {{ $json.kwh }} kWh\n- Consumo Esperado (EMA): {{ $json.ema }} kWh\n- Desviación: {{ $json.desviacion }}%\n- Severidad: {{ $json.severidad }}\n\nResponde ÚNICAMENTE con un objeto JSON (sin markdown) con estas llaves:\n{\n  \"causa\": \"explicación breve de la causa\",\n  \"accion\": \"acción inmediata para mantenimiento\",\n  \"prioridad\": \"Alta|Media|Baja\",\n  \"diagnostico_ext\": \"resumen de 1-2 líneas\"\n}",
+        "messages": {
+          "messageValues": [
+            {
+              "message": "Actúa como motor de diagnóstico JSON. Solo responde el objeto JSON, sin texto adicional."
+            }
+          ]
+        },
+        "batching": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.chainLlm",
+      "typeVersion": 1.9,
+      "position": [
+        720,
+        -200
+      ],
+      "id": "anomaly-llm-id",
+      "name": "LLM Diagnóstico Anomalía"
+    },
+    {
+      "parameters": {
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatGoogleGemini",
+      "typeVersion": 1,
+      "position": [
+        720,
+        -50
+      ],
+      "id": "gemini-anomaly-id",
+      "name": "Gemini Anomalía",
+      "credentials": {
+        "googlePalmApi": {
+          "id": "KCTdNJeeCP1jXUX5",
+          "name": "Google Gemini(PaLM) Api account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "INSERT INTO anomalias (timestamp, area, dispositivo, severidad, valor_kwh, ema_kwh, desviacion, recomendacion)\nVALUES (NOW(), $1, $2, $3, $4, $5, $6, $7);",
+        "options": {
+          "queryReplacement": "={{ [ \n  $(\"Switch Severidad\").item.json.area, \n  $(\"Switch Severidad\").item.json.area.toLowerCase().includes('hvac') ? 'HVAC' : ($(\"Switch Severidad\").item.json.area.toLowerCase().includes('luz') ? 'Iluminación' : 'General'), \n  $(\"Switch Severidad\").item.json.severidad, \n  $(\"Switch Severidad\").item.json.kwh, \n  $(\"Switch Severidad\").item.json.ema, \n  $(\"Switch Severidad\").item.json.desviacion, \n  $json.output || $json.text || JSON.stringify($json)\n] }}"
+        }
+      },
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.6,
+      "position": [
+        940,
+        -350
+      ],
+      "id": "guardar-anomalia-id",
+      "name": "Guardar Anomalía",
+      "credentials": {
+        "postgres": {
+          "id": "postgres-cred-id",
+          "name": "Postgres local"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "=https://api.telegram.org/bot{{ $env.TELEGRAM_TOKEN }}/sendMessage",
+        "sendBody": true,
+        "bodyParameters": {
+          "parameters": [
+            {
+              "name": "chat_id",
+              "value": "={{ $env.TELEGRAM_CHAT_ID }}"
+            },
+            {
+              "name": "parse_mode",
+              "value": "HTML"
+            },
+            {
+              "name": "text",
+              "value": "=={{ (() => {\n    const tz = 'America/Lima';\n    const ts = $('Switch Severidad').item.json.timestamp ?? new Date().toISOString();\n    const fecha = new Date(ts).toLocaleString('es-ES', { timeZone: tz });\n    const area = $('Switch Severidad').item.json.area ?? 'N/D';\n    const sev  = ($('Switch Severidad').item.json.severidad ?? 'N/D').toString();\n    const kwh  = $('Switch Severidad').item.json.kwh ?? 'N/D';\n    const ema  = $('Switch Severidad').item.json.ema ?? 'N/D';\n    const des  = $('Switch Severidad').item.json.desviacion ?? 'N/D';\n    let ai;\n    try { ai = JSON.parse($json.text.replace(/```json/g, '').replace(/```/g, '')); }\n    catch (e) { ai = { causa: $json.text, accion: 'Revisar manualmente', prioridad: 'Alta' }; }\n    const sevEmoji = sev.toLowerCase().includes('crit') ? '🔴' : '🟠';\n    const prEmoji  = (ai.prioridad||'').toLowerCase().includes('alta') ? '🔥' : '⚠️';\n    return (\n`${sevEmoji} <b>ALERTA ENERGÉTICA: ${area}</b>\\n` +\n`━━━━━━━━━━━━━━━━━━━━\\n` +\n`🕒 <b>Fecha:</b> ${fecha}\\n` +\n`🏷️ <b>Severidad:</b> ${sev}\\n\\n` +\n`<b>📊 Métricas</b>\\n` +\n`⚡ Actual: <b>${kwh} kWh</b>\\n` +\n`📈 EMA: ${ema} kWh\\n` +\n`📉 Desviación: <b>${des}%</b>\\n\\n` +\n`<b>🧠 Diagnóstico IA</b>\\n` +\n`🧩 Causa: ${ai.causa}\\n` +\n`🛠️ Acción: ${ai.accion}\\n` +\n`${prEmoji} Prioridad: <b>${ai.prioridad}</b>\\n\\n` +\n`🤖 <i>Sistema de Monitoreo Inteligente v2</i>`\n    );\n  })() }}"
+            },
+            {
+              "name": "reply_markup",
+              "value": "={{ JSON.stringify({ inline_keyboard: [[{text:'📊 Ver Estado', callback_data:'get_status'}, {text:'🚨 Ver Anomalías', callback_data:'get_anomalias'}]] }) }}"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.4,
+      "position": [
+        940,
+        -200
+      ],
+      "id": "alert-telegram-id",
+      "name": "Alerta Telegram"
+    }
+  ],
+  "connections": {
+    "Telegram Trigger": {
+      "main": [
+        [
+          {
+            "node": "Normalizar Input",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Normalizar Input": {
+      "main": [
+        [
+          {
+            "node": "Router Principal",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Router Principal": {
+      "main": [
+        [
+          {
+            "node": "Enviar Menú Principal",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Obtener Reporte 24h",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Obtener Status Áreas",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Obtener Anomalías",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Datos para Predicción",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Contexto BD para IA",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Datos para Exportar",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Obtener Reporte 24h": {
+      "main": [
+        [
+          {
+            "node": "Formatear Reporte",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Formatear Reporte": {
+      "main": [
+        [
+          {
+            "node": "Enviar Reporte",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Obtener Status Áreas": {
+      "main": [
+        [
+          {
+            "node": "Formatear Status",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Formatear Status": {
+      "main": [
+        [
+          {
+            "node": "Enviar Status",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Obtener Anomalías": {
+      "main": [
+        [
+          {
+            "node": "Formatear Anomalías",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Formatear Anomalías": {
+      "main": [
+        [
+          {
+            "node": "Enviar Anomalías",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Datos para Predicción": {
+      "main": [
+        [
+          {
+            "node": "LLM Predicción",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Gemini Predicción": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "LLM Predicción",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "LLM Predicción": {
+      "main": [
+        [
+          {
+            "node": "Formatear Predicción",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Formatear Predicción": {
+      "main": [
+        [
+          {
+            "node": "Enviar Predicción",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Datos para Exportar": {
+      "main": [
+        [
+          {
+            "node": "Generar CSV",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Generar CSV": {
+      "main": [
+        [
+          {
+            "node": "Enviar CSV",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Contexto BD para IA": {
+      "main": [
+        [
+          {
+            "node": "Preparar Prompt IA",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Preparar Prompt IA": {
+      "main": [
+        [
+          {
+            "node": "Chat IA con Contexto",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Gemini Chat Model": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "Chat IA con Contexto",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Chat IA con Contexto": {
+      "main": [
+        [
+          {
+            "node": "Enviar Respuesta IA",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "MQTT Trigger": {
+      "main": [
+        [
+          {
+            "node": "Parsear MQTT",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Parsear MQTT": {
+      "main": [
+        [
+          {
+            "node": "Obtener EMA",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Obtener EMA": {
+      "main": [
+        [
+          {
+            "node": "Calcular EMA",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Calcular EMA": {
+      "main": [
+        [
+          {
+            "node": "Guardar EMA",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Guardar Historial",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Switch Severidad",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Guardar EMA": {
+      "main": [
+        []
+      ]
+    },
+    "Guardar Historial": {
+      "main": [
+        [
+          {
+            "node": "Escritura en InfluxDB",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Escritura en InfluxDB": {
+      "main": [
+        []
+      ]
+    },
+    "Switch Severidad": {
+      "main": [
+        [
+          {
+            "node": "LLM Diagnóstico Anomalía",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Escritura en InfluxDB",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "LLM Diagnóstico Anomalía",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Escritura en InfluxDB",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Escritura en InfluxDB",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Gemini Anomalía": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "LLM Diagnóstico Anomalía",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "LLM Diagnóstico Anomalía": {
+      "main": [
+        [
+          {
+            "node": "Guardar Anomalía",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Alerta Telegram",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Guardar Anomalía": {
+      "main": [
+        []
+      ]
+    },
+    "Alerta Telegram": {
+      "main": [
+        []
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1",
+    "binaryMode": "separate",
+    "availableInMCP": false,
+    "timeSavedMode": "fixed",
+    "callerPolicy": "workflowsFromSameOwner"
+  },
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "ae9088f022b1c55eff9078324c1ad38af40876a591a9cf319a66be576c93c9fd"
+  },
+  "tags": []
+}
