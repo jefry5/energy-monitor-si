@@ -1,0 +1,7 @@
+.env
+__pycache__/
+*.pyc
+data/real/*.csv
+n8n/data/
+influxdb/data/
+venv

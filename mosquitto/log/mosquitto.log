@@ -1,0 +1,646 @@
+1771990976: mosquitto version 2.1.2 starting
+1771990976: Config loaded from /mosquitto/config/mosquitto.conf.
+1771990976: Bridge support available.
+1771990976: Persistence support available.
+1771990976: TLS support available.
+1771990976: TLS-PSK support available.
+1771990976: Websockets support available.
+1771990976: Opening ipv4 listen socket on port 1883.
+1771990976: Opening ipv6 listen socket on port 1883.
+1771990976: mosquitto version 2.1.2 running
+1771992115: New connection from 172.19.0.6:44236 on port 1883.
+1771992116: New client connected from 172.19.0.6:44236 as mqttjs_ziw5yv24 (p4, c1, k60, u'admin').
+1771992116: Client mqttjs_ziw5yv24 [172.19.0.6:44236] disconnected.
+1771992138: New connection from 172.19.0.6:36116 on port 1883.
+1771992138: New client connected from 172.19.0.6:36116 as mqttjs_khtquv8j (p4, c1, k60, u'admin').
+1771992163: Client mqttjs_khtquv8j [172.19.0.6:36116] disconnected.
+1771992310: New connection from 172.19.0.6:43530 on port 1883.
+1771992310: New client connected from 172.19.0.6:43530 as mqttjs_0kfqzqx8 (p4, c1, k60, u'admin').
+1771992459: Client mqttjs_0kfqzqx8 [172.19.0.6:43530] disconnected.
+1771992776: Saving in-memory database to /mosquitto/data//mosquitto.db.
+1771993915: New connection from 172.19.0.6:59686 on port 1883.
+1771993915: New client connected from 172.19.0.6:59686 as mqttjs_qppliboo (p4, c1, k60, u'admin').
+1771993920: Client mqttjs_qppliboo [172.19.0.6:59686] disconnected.
+1771993926: New connection from 172.19.0.6:54390 on port 1883.
+1771993926: New client connected from 172.19.0.6:54390 as mqttjs_dabszugp (p4, c1, k60, u'admin').
+1771993928: Client mqttjs_dabszugp [172.19.0.6:54390] disconnected.
+1771994577: Saving in-memory database to /mosquitto/data//mosquitto.db.
+1771996378: Saving in-memory database to /mosquitto/data//mosquitto.db.
+1771997602: mosquitto version 2.1.2 terminating
+1771997602: Saving in-memory database to /mosquitto/data//mosquitto.db.
+1771997604: mosquitto version 2.1.2 starting
+1771997604: Config loaded from /mosquitto/config/mosquitto.conf.
+1771997604: Bridge support available.
+1771997604: Persistence support available.
+1771997604: TLS support available.
+1771997604: TLS-PSK support available.
+1771997604: Websockets support available.
+1771997604: Opening ipv4 listen socket on port 1883.
+1771997604: Opening ipv6 listen socket on port 1883.
+1771997604: mosquitto version 2.1.2 running
+1771998106: mosquitto version 2.1.2 terminating
+1771998106: Saving in-memory database to /mosquitto/data//mosquitto.db.
+1771998108: mosquitto version 2.1.2 starting
+1771998108: Config loaded from /mosquitto/config/mosquitto.conf.
+1771998108: Bridge support available.
+1771998108: Persistence support available.
+1771998108: TLS support available.
+1771998108: TLS-PSK support available.
+1771998108: Websockets support available.
+1771998108: Opening ipv4 listen socket on port 1883.
+1771998108: Opening ipv6 listen socket on port 1883.
+1771998108: mosquitto version 2.1.2 running
+1771998574: mosquitto version 2.1.2 terminating
+1771998574: Saving in-memory database to /mosquitto/data//mosquitto.db.
+1771998576: mosquitto version 2.1.2 starting
+1771998576: Config loaded from /mosquitto/config/mosquitto.conf.
+1771998576: Bridge support available.
+1771998576: Persistence support available.
+1771998576: TLS support available.
+1771998576: TLS-PSK support available.
+1771998576: Websockets support available.
+1771998576: Opening ipv4 listen socket on port 1883.
+1771998576: Opening ipv6 listen socket on port 1883.
+1771998576: mosquitto version 2.1.2 running
+1772000377: Saving in-memory database to /mosquitto/data//mosquitto.db.
+1772000502: New connection from 172.19.0.6:43700 on port 1883.
+1772000502: New client connected from 172.19.0.6:43700 as mqttjs_qyrwt8pq (p4, c1, k60, u'admin').
+1772000503: Client mqttjs_qyrwt8pq [172.19.0.6:43700] disconnected.
+1772000891: New connection from 172.19.0.1:56326 on port 1883.
+1772000891: New client connected from 172.19.0.1:56326 as sensor_sim (p4, c1, k60).
+1772000897: Client sensor_sim [172.19.0.1:56326] disconnected.
+1772000900: New connection from 172.19.0.1:49220 on port 1883.
+1772000900: New client connected from 172.19.0.1:49220 as sensor_sim (p4, c1, k60).
+1772000912: New connection from 172.19.0.6:35450 on port 1883.
+1772000912: New client connected from 172.19.0.6:35450 as mqttjs_rw2fuc4i (p4, c1, k60, u'admin').
+1772001047: New connection from 172.19.0.6:43730 on port 1883.
+1772001047: New client connected from 172.19.0.6:43730 as mqttjs_axelk6xj (p4, c1, k60, u'admin').
+1772001047: Client mqttjs_axelk6xj [172.19.0.6:43730] disconnected.
+1772001049: New connection from 172.19.0.6:43738 on port 1883.
+1772001049: New client connected from 172.19.0.6:43738 as mqttjs_8agfxefd (p4, c1, k60, u'admin').
+1772001049: Client mqttjs_8agfxefd [172.19.0.6:43738] disconnected.
+1772001050: New connection from 172.19.0.6:43752 on port 1883.
+1772001050: New client connected from 172.19.0.6:43752 as mqttjs_umxokw2p (p4, c1, k60, u'admin').
+1772001050: Client mqttjs_umxokw2p [172.19.0.6:43752] disconnected.
+1772001246: Client sensor_sim [172.19.0.1:49220] disconnected: connection closed by client.
+1772001257: Client mqttjs_rw2fuc4i [172.19.0.6:35450] disconnected.
+1772001294: New connection from 172.19.0.6:45144 on port 1883.
+1772001294: New client connected from 172.19.0.6:45144 as mqttjs_qx1wbwba (p4, c1, k60, u'admin').
+1772001298: Client mqttjs_qx1wbwba [172.19.0.6:45144] disconnected.
+1772001302: New connection from 172.19.0.6:45154 on port 1883.
+1772001302: New client connected from 172.19.0.6:45154 as mqttjs_ibinvsw6 (p4, c1, k60, u'admin').
+1772001311: New connection from 172.19.0.1:49288 on port 1883.
+1772001311: New client connected from 172.19.0.1:49288 as sensor_sim (p4, c1, k60).
+1772001344: New connection from 172.19.0.6:48092 on port 1883.
+1772001344: New client connected from 172.19.0.6:48092 as mqttjs_ycl9saoc (p4, c1, k60, u'admin').
+1772001344: Client mqttjs_ycl9saoc [172.19.0.6:48092] disconnected.
+1772001495: Client mqttjs_ibinvsw6 [172.19.0.6:45154] disconnected.
+1772001496: New connection from 172.19.0.6:59344 on port 1883.
+1772001496: New client connected from 172.19.0.6:59344 as mqttjs_gsl4gwvu (p4, c1, k60, u'admin').
+1772001496: Client mqttjs_gsl4gwvu [172.19.0.6:59344] disconnected.
+1772001498: New connection from 172.19.0.6:59352 on port 1883.
+1772001498: New client connected from 172.19.0.6:59352 as mqttjs_iiohz2y6 (p4, c1, k60, u'admin').
+1772001498: Client mqttjs_iiohz2y6 [172.19.0.6:59352] disconnected.
+1772001500: New connection from 172.19.0.6:59364 on port 1883.
+1772001500: New client connected from 172.19.0.6:59364 as mqttjs_mwakm6bb (p4, c1, k60, u'admin').
+1772001500: Client mqttjs_mwakm6bb [172.19.0.6:59364] disconnected.
+1772001544: New connection from ::1:56004 on port 1883.
+1772001544: New client connected from ::1:56004 as auto-CF51239D-1135-705E-350C-B71B12F3FC78 (p4, c1, k60).
+1772001548: Client sensor_sim [172.19.0.1:49288] disconnected.
+1772001550: New connection from 172.19.0.1:60398 on port 1883.
+1772001550: New client connected from 172.19.0.1:60398 as sensor_sim (p4, c1, k60).
+1772001602: Client auto-CF51239D-1135-705E-350C-B71B12F3FC78 [::1:56004] disconnected.
+1772001606: Client sensor_sim [172.19.0.1:60398] disconnected.
+1772001672: New connection from 172.19.0.6:41482 on port 1883.
+1772001672: New client connected from 172.19.0.6:41482 as mqttjs_ixlpc1z7 (p4, c1, k60, u'admin').
+1772001672: Client mqttjs_ixlpc1z7 [172.19.0.6:41482] disconnected.
+1772001675: New connection from 172.19.0.6:35082 on port 1883.
+1772001675: New client connected from 172.19.0.6:35082 as mqttjs_o7n8spn1 (p4, c1, k60, u'admin').
+1772001675: Client mqttjs_o7n8spn1 [172.19.0.6:35082] disconnected.
+1772001685: New connection from 172.19.0.6:33990 on port 1883.
+1772001685: New client connected from 172.19.0.6:33990 as mqttjs_wv5a67p0 (p4, c1, k60, u'admin').
+1772001685: Client mqttjs_wv5a67p0 [172.19.0.6:33990] disconnected.
+1772001842: New connection from 172.19.0.6:33802 on port 1883.
+1772001842: New client connected from 172.19.0.6:33802 as mqttjs_xvixzu74 (p4, c1, k60, u'admin').
+1772001842: Client mqttjs_xvixzu74 [172.19.0.6:33802] disconnected.
+1772001845: New connection from 172.19.0.6:51608 on port 1883.
+1772001845: New client connected from 172.19.0.6:51608 as n8n_trigger_1 (p4, c1, k60, u'admin').
+1772001845: Client n8n_trigger_1 [172.19.0.6:51608] disconnected.
+1772001846: New connection from 172.19.0.6:51616 on port 1883.
+1772001846: New client connected from 172.19.0.6:51616 as n8n_trigger_1 (p4, c1, k60, u'admin').
+1772001846: Client n8n_trigger_1 [172.19.0.6:51616] disconnected.
+1772001848: New connection from 172.19.0.6:51626 on port 1883.
+1772001848: New client connected from 172.19.0.6:51626 as n8n_trigger_1 (p4, c1, k60, u'admin').
+1772001852: New connection from 172.19.0.1:44154 on port 1883.
+1772001852: New client connected from 172.19.0.1:44154 as sensor_sim (p4, c1, k60).
+1772001900: Client sensor_sim [172.19.0.1:44154] disconnected.
+1772002129: Client n8n_trigger_1 [172.19.0.6:51626] disconnected.
+1772002158: New connection from 172.19.0.6:35610 on port 1883.
+1772002158: New client connected from 172.19.0.6:35610 as n8n_trigger_1 (p4, c1, k60, u'admin').
+1772002162: New connection from 172.19.0.1:39452 on port 1883.
+1772002162: New client connected from 172.19.0.1:39452 as sensor_sim (p4, c1, k60).
+1772002178: Saving in-memory database to /mosquitto/data//mosquitto.db.
+1772002193: New connection from 172.19.0.6:40052 on port 1883.
+1772002193: Client n8n_trigger_1 [172.19.0.6:35610] disconnected: session taken over.
+1772002193: New client connected from 172.19.0.6:40052 as n8n_trigger_1 (p4, c1, k60, u'admin').
+1772002193: Client n8n_trigger_1 [172.19.0.6:40052] disconnected.
+1772002194: New connection from 172.19.0.6:40062 on port 1883.
+1772002194: New client connected from 172.19.0.6:40062 as n8n_trigger_1 (p4, c1, k60, u'admin').
+1772002194: Client n8n_trigger_1 [172.19.0.6:40062] disconnected.
+1772002194: New connection from 172.19.0.6:40064 on port 1883.
+1772002194: New client connected from 172.19.0.6:40064 as n8n_trigger_1 (p4, c1, k60, u'admin').
+1772002194: New connection from 172.19.0.6:40074 on port 1883.
+1772002194: Client n8n_trigger_1 [172.19.0.6:40064] disconnected: session taken over.
+1772002194: New client connected from 172.19.0.6:40074 as n8n_trigger_1 (p4, c1, k60, u'admin').
+1772002194: Client n8n_trigger_1 [172.19.0.6:40074] disconnected.
+1772002195: New connection from 172.19.0.6:40078 on port 1883.
+1772002195: New client connected from 172.19.0.6:40078 as n8n_trigger_1 (p4, c1, k60, u'admin').
+1772002195: Client n8n_trigger_1 [172.19.0.6:40078] disconnected.
+1772002195: New connection from 172.19.0.6:40080 on port 1883.
+1772002195: New client connected from 172.19.0.6:40080 as n8n_trigger_1 (p4, c1, k60, u'admin').
+1772002216: Client n8n_trigger_1 [172.19.0.6:40080] disconnected.
+1772002279: New connection from 172.19.0.6:56372 on port 1883.
+1772002279: New client connected from 172.19.0.6:56372 as n8n_trigger_1 (p4, c1, k60, u'admin').
+1772002279: Client n8n_trigger_1 [172.19.0.6:56372] disconnected.
+1772002309: New connection from 172.19.0.6:46366 on port 1883.
+1772002309: New client connected from 172.19.0.6:46366 as n8n_trigger_1 (p4, c1, k60, u'admin').
+1772002309: Client n8n_trigger_1 [172.19.0.6:46366] disconnected.
+1772002310: New connection from 172.19.0.6:46372 on port 1883.
+1772002310: New client connected from 172.19.0.6:46372 as n8n_trigger_1 (p4, c1, k60, u'admin').
+1772002310: Client n8n_trigger_1 [172.19.0.6:46372] disconnected.
+1772002311: New connection from 172.19.0.6:46374 on port 1883.
+1772002311: New client connected from 172.19.0.6:46374 as n8n_trigger_1 (p4, c1, k60, u'admin').
+1772002311: Client n8n_trigger_1 [172.19.0.6:46374] disconnected.
+1772002317: New connection from 172.19.0.6:43548 on port 1883.
+1772002317: New client connected from 172.19.0.6:43548 as n8n_trigger_1 (p4, c1, k60, u'admin').
+1772002331: Client n8n_trigger_1 [172.19.0.6:43548] disconnected.
+1772002338: New connection from 172.19.0.6:47416 on port 1883.
+1772002338: New client connected from 172.19.0.6:47416 as n8n_trigger_1 (p4, c1, k60, u'admin').
+1772002359: New connection from ::1:49042 on port 1883.
+1772002359: New client connected from ::1:49042 as auto-4817F10A-4EDA-84A5-112F-399CACFB661E (p4, c1, k60).
+1772002359: Client auto-4817F10A-4EDA-84A5-112F-399CACFB661E [::1:49042] disconnected.
+1772002382: New connection from ::1:32892 on port 1883.
+1772002382: New client connected from ::1:32892 as auto-19D53A58-2BD8-00CE-A2F8-1696E5D8FE10 (p4, c1, k60).
+1772002382: Client auto-19D53A58-2BD8-00CE-A2F8-1696E5D8FE10 [::1:32892] disconnected.
+1772002526: New connection from ::1:51920 on port 1883.
+1772002526: New client connected from ::1:51920 as auto-721FC8D8-1375-D9CB-FA63-A4DE15BBCC09 (p4, c1, k60).
+1772002546: Client n8n_trigger_1 [172.19.0.6:47416] disconnected.
+1772002553: New connection from 172.19.0.6:51628 on port 1883.
+1772002553: New client connected from 172.19.0.6:51628 as n8n_trigger_1 (p4, c1, k60, u'admin').
+1772002746: Client n8n_trigger_1 [172.19.0.6:51628] disconnected.
+1772002747: New connection from 172.19.0.6:40072 on port 1883.
+1772002747: New client connected from 172.19.0.6:40072 as n8n_trigger_1 (p4, c1, k60, u'admin').
+1772002751: Client auto-721FC8D8-1375-D9CB-FA63-A4DE15BBCC09 [::1:51920] disconnected.
+1772002898: New connection from ::1:57684 on port 1883.
+1772002898: New client connected from ::1:57684 as auto-0DF28A3D-06EC-F663-7485-CF0E7141A525 (p4, c1, k60).
+1772002898: Client auto-0DF28A3D-06EC-F663-7485-CF0E7141A525 [::1:57684] disconnected.
+1772002898: Client n8n_trigger_1 [172.19.0.6:40072] disconnected.
+1772002921: New connection from 172.19.0.6:42162 on port 1883.
+1772002921: New client connected from 172.19.0.6:42162 as n8n_trigger_1 (p4, c1, k60, u'admin').
+1772002925: New connection from ::1:46608 on port 1883.
+1772002925: New client connected from ::1:46608 as auto-952984A7-445E-FD5A-9562-4C17187997D9 (p4, c1, k60).
+1772002925: Client auto-952984A7-445E-FD5A-9562-4C17187997D9 [::1:46608] disconnected.
+1772002925: Client n8n_trigger_1 [172.19.0.6:42162] disconnected.
+1772002947: New connection from 172.19.0.6:57574 on port 1883.
+1772002947: New client connected from 172.19.0.6:57574 as n8n_trigger_1 (p4, c1, k60, u'admin').
+1772002955: Client sensor_sim [172.19.0.1:39452] disconnected.
+1772002959: New connection from ::1:57820 on port 1883.
+1772002959: New client connected from ::1:57820 as auto-A7138C76-BE57-4111-33E5-D8D46E40DF1A (p4, c1, k60).
+1772002959: Client auto-A7138C76-BE57-4111-33E5-D8D46E40DF1A [::1:57820] disconnected.
+1772002959: Client n8n_trigger_1 [172.19.0.6:57574] disconnected.
+1772003139: New connection from 172.19.0.6:37954 on port 1883.
+1772003139: New client connected from 172.19.0.6:37954 as n8n_trigger_1 (p4, c1, k60, u'admin').
+1772003144: New connection from 172.19.0.1:40716 on port 1883.
+1772003144: New client connected from 172.19.0.1:40716 as sensor_sim (p4, c1, k60).
+1772003144: Client n8n_trigger_1 [172.19.0.6:37954] disconnected.
+1772003150: New connection from 172.19.0.6:44986 on port 1883.
+1772003150: New client connected from 172.19.0.6:44986 as n8n_trigger_1 (p4, c1, k60, u'admin').
+1772003174: Client n8n_trigger_1 [172.19.0.6:44986] disconnected.
+1772003491: New connection from 172.19.0.6:49936 on port 1883.
+1772003491: New client connected from 172.19.0.6:49936 as n8n_trigger_1 (p4, c1, k60, u'admin').
+1772003504: Client n8n_trigger_1 [172.19.0.6:49936] disconnected.
+1772003598: New connection from 172.19.0.6:58372 on port 1883.
+1772003598: New client connected from 172.19.0.6:58372 as n8n_trigger_1 (p4, c1, k60, u'admin').
+1772003624: Client n8n_trigger_1 [172.19.0.6:58372] disconnected.
+1772003647: Client sensor_sim [172.19.0.1:40716] disconnected: connection closed by client.
+1772003679: New connection from 172.19.0.1:52884 on port 1883.
+1772003679: New client connected from 172.19.0.1:52884 as sensor_sim (p4, c1, k60).
+1772003682: Client sensor_sim [172.19.0.1:52884] disconnected: connection closed by client.
+1772003691: New connection from 172.19.0.6:38088 on port 1883.
+1772003691: New client connected from 172.19.0.6:38088 as n8n_trigger_1 (p4, c1, k60, u'admin').
+1772003694: New connection from 172.19.0.1:57486 on port 1883.
+1772003694: New client connected from 172.19.0.1:57486 as sensor_sim (p4, c1, k60).
+1772003694: Client n8n_trigger_1 [172.19.0.6:38088] disconnected.
+1772003749: Client sensor_sim [172.19.0.1:57486] disconnected.
+1772003758: New connection from 172.19.0.6:54100 on port 1883.
+1772003758: New client connected from 172.19.0.6:54100 as n8n_trigger_1 (p4, c1, k60, u'admin').
+1772003760: New connection from 172.19.0.1:39488 on port 1883.
+1772003760: New client connected from 172.19.0.1:39488 as sensor_sim (p4, c1, k60).
+1772003760: Client n8n_trigger_1 [172.19.0.6:54100] disconnected.
+1772003949: Client sensor_sim [172.19.0.1:39488] disconnected.
+1772003978: Saving in-memory database to /mosquitto/data//mosquitto.db.
+1772004007: mosquitto version 2.1.2 terminating
+1772004007: Saving in-memory database to /mosquitto/data//mosquitto.db.
+1772061906: mosquitto version 2.1.2 starting
+1772061906: Config loaded from /mosquitto/config/mosquitto.conf.
+1772061906: Bridge support available.
+1772061906: Persistence support available.
+1772061906: TLS support available.
+1772061906: TLS-PSK support available.
+1772061906: Websockets support available.
+1772061906: Opening ipv4 listen socket on port 1883.
+1772061906: Opening ipv6 listen socket on port 1883.
+1772061906: mosquitto version 2.1.2 running
+1772062069: New connection from 172.19.0.1:33242 on port 1883.
+1772062069: New client connected from 172.19.0.1:33242 as sensor_sim (p4, c1, k60).
+1772062071: Client sensor_sim [172.19.0.1:33242] disconnected.
+1772062117: New connection from 172.19.0.6:55836 on port 1883.
+1772062117: New client connected from 172.19.0.6:55836 as n8n_trigger_1 (p4, c1, k60, u'admin').
+1772062142: Client n8n_trigger_1 [172.19.0.6:55836] disconnected.
+1772062150: New connection from 172.19.0.6:51852 on port 1883.
+1772062150: New client connected from 172.19.0.6:51852 as n8n_trigger_1 (p4, c1, k60, u'admin').
+1772062153: New connection from 172.19.0.1:52990 on port 1883.
+1772062153: New client connected from 172.19.0.1:52990 as sensor_sim (p4, c1, k60).
+1772062153: Client n8n_trigger_1 [172.19.0.6:51852] disconnected.
+1772062156: New connection from 172.19.0.6:41002 on port 1883.
+1772062156: New client connected from 172.19.0.6:41002 as n8n_trigger_1 (p4, c1, k60, u'admin').
+1772062183: Client n8n_trigger_1 [172.19.0.6:41002] disconnected.
+1772062254: New connection from 172.19.0.6:45172 on port 1883.
+1772062254: New client connected from 172.19.0.6:45172 as n8n_trigger_1 (p4, c1, k60, u'admin').
+1772062273: Client n8n_trigger_1 [172.19.0.6:45172] disconnected.
+1772062310: New connection from 172.19.0.6:53608 on port 1883.
+1772062310: New client connected from 172.19.0.6:53608 as n8n_trigger_1 (p4, c1, k60, u'admin').
+1772062368: Client n8n_trigger_1 [172.19.0.6:53608] disconnected.
+1772062368: New connection from 172.19.0.6:51052 on port 1883.
+1772062368: New client connected from 172.19.0.6:51052 as n8n_trigger_1 (p4, c1, k60, u'admin').
+1772062401: Client n8n_trigger_1 [172.19.0.6:51052] disconnected.
+1772062428: Client sensor_sim [172.19.0.1:52990] disconnected: connection closed by client.
+1772062471: New connection from 172.19.0.6:43082 on port 1883.
+1772062471: New client connected from 172.19.0.6:43082 as n8n_trigger_1 (p4, c1, k60, u'admin').
+1772062478: New connection from 172.19.0.1:50294 on port 1883.
+1772062478: New client connected from 172.19.0.1:50294 as sensor_sim (p4, c1, k60).
+1772063082: Client sensor_sim [172.19.0.1:50294] disconnected: connection closed by client.
+1772063096: New connection from 172.19.0.1:49748 on port 1883.
+1772063096: New client connected from 172.19.0.1:49748 as sensor_sim (p4, c1, k60).
+1772063163: Client sensor_sim [172.19.0.1:49748] disconnected.
+1772063706: Saving in-memory database to /mosquitto/data//mosquitto.db.
+1772064277: New connection from 172.19.0.6:49698 on port 1883.
+1772064277: Client n8n_trigger_1 [172.19.0.6:43082] disconnected: session taken over.
+1772064277: New client connected from 172.19.0.6:49698 as n8n_trigger_1 (p4, c1, k60, u'admin').
+1772064278: New connection from 172.19.0.6:49714 on port 1883.
+1772064278: Client n8n_trigger_1 [172.19.0.6:49698] disconnected: session taken over.
+1772064278: New client connected from 172.19.0.6:49714 as n8n_trigger_1 (p4, c1, k60, u'admin').
+1772064279: New connection from 172.19.0.6:49722 on port 1883.
+1772064279: Client n8n_trigger_1 [172.19.0.6:49714] disconnected: session taken over.
+1772064279: New client connected from 172.19.0.6:49722 as n8n_trigger_1 (p4, c1, k60, u'admin').
+1772064280: New connection from 172.19.0.6:49728 on port 1883.
+1772064280: Client n8n_trigger_1 [172.19.0.6:49722] disconnected: session taken over.
+1772064280: New client connected from 172.19.0.6:49728 as n8n_trigger_1 (p4, c1, k60, u'admin').
+1772064281: New connection from 172.19.0.6:49730 on port 1883.
+1772064281: Client n8n_trigger_1 [172.19.0.6:49728] disconnected: session taken over.
+1772064281: New client connected from 172.19.0.6:49730 as n8n_trigger_1 (p4, c1, k60, u'admin').
+1772064282: New connection from 172.19.0.6:49742 on port 1883.
+1772064282: Client n8n_trigger_1 [172.19.0.6:49730] disconnected: session taken over.
+1772064282: New client connected from 172.19.0.6:49742 as n8n_trigger_1 (p4, c1, k60, u'admin').
+1772064283: New connection from 172.19.0.6:49750 on port 1883.
+1772064283: Client n8n_trigger_1 [172.19.0.6:49742] disconnected: session taken over.
+1772064283: New client connected from 172.19.0.6:49750 as n8n_trigger_1 (p4, c1, k60, u'admin').
+1772064284: New connection from 172.19.0.6:49758 on port 1883.
+1772064284: Client n8n_trigger_1 [172.19.0.6:49750] disconnected: session taken over.
+1772064284: New client connected from 172.19.0.6:49758 as n8n_trigger_1 (p4, c1, k60, u'admin').
+1772064285: New connection from 172.19.0.6:40254 on port 1883.
+1772064285: Client n8n_trigger_1 [172.19.0.6:49758] disconnected: session taken over.
+1772064285: New client connected from 172.19.0.6:40254 as n8n_trigger_1 (p4, c1, k60, u'admin').
+1772064286: New connection from 172.19.0.6:40258 on port 1883.
+1772064286: Client n8n_trigger_1 [172.19.0.6:40254] disconnected: session taken over.
+1772064286: New client connected from 172.19.0.6:40258 as n8n_trigger_1 (p4, c1, k60, u'admin').
+1772064287: New connection from 172.19.0.6:40260 on port 1883.
+1772064287: Client n8n_trigger_1 [172.19.0.6:40258] disconnected: session taken over.
+1772064287: New client connected from 172.19.0.6:40260 as n8n_trigger_1 (p4, c1, k60, u'admin').
+1772064288: New connection from 172.19.0.6:40270 on port 1883.
+1772064288: Client n8n_trigger_1 [172.19.0.6:40260] disconnected: session taken over.
+1772064288: New client connected from 172.19.0.6:40270 as n8n_trigger_1 (p4, c1, k60, u'admin').
+1772064289: New connection from 172.19.0.6:40284 on port 1883.
+1772064289: Client n8n_trigger_1 [172.19.0.6:40270] disconnected: session taken over.
+1772064289: New client connected from 172.19.0.6:40284 as n8n_trigger_1 (p4, c1, k60, u'admin').
+1772064290: New connection from 172.19.0.6:40292 on port 1883.
+1772064290: Client n8n_trigger_1 [172.19.0.6:40284] disconnected: session taken over.
+1772064290: New client connected from 172.19.0.6:40292 as n8n_trigger_1 (p4, c1, k60, u'admin').
+1772064291: New connection from 172.19.0.6:40304 on port 1883.
+1772064291: Client n8n_trigger_1 [172.19.0.6:40292] disconnected: session taken over.
+1772064291: New client connected from 172.19.0.6:40304 as n8n_trigger_1 (p4, c1, k60, u'admin').
+1772064292: Client n8n_trigger_1 [172.19.0.6:40304] disconnected.
+1772064292: New connection from 172.19.0.6:40312 on port 1883.
+1772064292: New client connected from 172.19.0.6:40312 as n8n_trigger_1 (p4, c1, k60, u'admin').
+1772064582: New connection from 172.19.0.6:36482 on port 1883.
+1772064582: Client n8n_trigger_1 [172.19.0.6:40312] disconnected: session taken over.
+1772064582: New client connected from 172.19.0.6:36482 as n8n_trigger_1 (p4, c1, k60, u'admin').
+1772064583: New connection from 172.19.0.6:36494 on port 1883.
+1772064583: Client n8n_trigger_1 [172.19.0.6:36482] disconnected: session taken over.
+1772064583: New client connected from 172.19.0.6:36494 as n8n_trigger_1 (p4, c1, k60, u'admin').
+1772064583: New connection from 172.19.0.1:46640 on port 1883.
+1772064583: New client connected from 172.19.0.1:46640 as sensor_sim (p4, c1, k60).
+1772064584: New connection from 172.19.0.6:36506 on port 1883.
+1772064584: Client n8n_trigger_1 [172.19.0.6:36494] disconnected: session taken over.
+1772064584: New client connected from 172.19.0.6:36506 as n8n_trigger_1 (p4, c1, k60, u'admin').
+1772064585: New connection from 172.19.0.6:36508 on port 1883.
+1772064585: Client n8n_trigger_1 [172.19.0.6:36506] disconnected: session taken over.
+1772064585: New client connected from 172.19.0.6:36508 as n8n_trigger_1 (p4, c1, k60, u'admin').
+1772064586: New connection from 172.19.0.6:49112 on port 1883.
+1772064586: Client n8n_trigger_1 [172.19.0.6:36508] disconnected: session taken over.
+1772064586: New client connected from 172.19.0.6:49112 as n8n_trigger_1 (p4, c1, k60, u'admin').
+1772064587: New connection from 172.19.0.6:49116 on port 1883.
+1772064587: Client n8n_trigger_1 [172.19.0.6:49112] disconnected: session taken over.
+1772064587: New client connected from 172.19.0.6:49116 as n8n_trigger_1 (p4, c1, k60, u'admin').
+1772064588: New connection from 172.19.0.6:49124 on port 1883.
+1772064588: Client n8n_trigger_1 [172.19.0.6:49116] disconnected: session taken over.
+1772064588: New client connected from 172.19.0.6:49124 as n8n_trigger_1 (p4, c1, k60, u'admin').
+1772064589: New connection from 172.19.0.6:49126 on port 1883.
+1772064589: Client n8n_trigger_1 [172.19.0.6:49124] disconnected: session taken over.
+1772064589: New client connected from 172.19.0.6:49126 as n8n_trigger_1 (p4, c1, k60, u'admin').
+1772064590: New connection from 172.19.0.6:49134 on port 1883.
+1772064590: Client n8n_trigger_1 [172.19.0.6:49126] disconnected: session taken over.
+1772064590: New client connected from 172.19.0.6:49134 as n8n_trigger_1 (p4, c1, k60, u'admin').
+1772064591: New connection from 172.19.0.6:49142 on port 1883.
+1772064591: Client n8n_trigger_1 [172.19.0.6:49134] disconnected: session taken over.
+1772064591: New client connected from 172.19.0.6:49142 as n8n_trigger_1 (p4, c1, k60, u'admin').
+1772064592: New connection from 172.19.0.6:49150 on port 1883.
+1772064592: Client n8n_trigger_1 [172.19.0.6:49142] disconnected: session taken over.
+1772064592: New client connected from 172.19.0.6:49150 as n8n_trigger_1 (p4, c1, k60, u'admin').
+1772064593: New connection from 172.19.0.6:49166 on port 1883.
+1772064593: Client n8n_trigger_1 [172.19.0.6:49150] disconnected: session taken over.
+1772064593: New client connected from 172.19.0.6:49166 as n8n_trigger_1 (p4, c1, k60, u'admin').
+1772064594: New connection from 172.19.0.6:49172 on port 1883.
+1772064594: Client n8n_trigger_1 [172.19.0.6:49166] disconnected: session taken over.
+1772064594: New client connected from 172.19.0.6:49172 as n8n_trigger_1 (p4, c1, k60, u'admin').
+1772064595: New connection from 172.19.0.6:49188 on port 1883.
+1772064595: Client n8n_trigger_1 [172.19.0.6:49172] disconnected: session taken over.
+1772064595: New client connected from 172.19.0.6:49188 as n8n_trigger_1 (p4, c1, k60, u'admin').
+1772064600: Client n8n_trigger_1 [172.19.0.6:49188] disconnected.
+1772064600: New connection from 172.19.0.6:35048 on port 1883.
+1772064600: New client connected from 172.19.0.6:35048 as n8n_trigger_1 (p4, c1, k60, u'admin').
+1772064608: Client n8n_trigger_1 [172.19.0.6:35048] disconnected.
+1772064609: New connection from 172.19.0.6:40574 on port 1883.
+1772064609: New client connected from 172.19.0.6:40574 as n8n_trigger_1 (p4, c1, k60, u'admin').
+1772064613: Client n8n_trigger_1 [172.19.0.6:40574] disconnected.
+1772064619: Client sensor_sim [172.19.0.1:46640] disconnected.
+1772064623: New connection from 172.19.0.1:60764 on port 1883.
+1772064623: New client connected from 172.19.0.1:60764 as sensor_sim (p4, c1, k60).
+1772064626: New connection from 172.19.0.6:58060 on port 1883.
+1772064626: New client connected from 172.19.0.6:58060 as n8n_trigger_1 (p4, c1, k60, u'admin').
+1772064654: Client n8n_trigger_1 [172.19.0.6:58060] disconnected.
+1772064767: New connection from 172.19.0.6:58768 on port 1883.
+1772064767: New client connected from 172.19.0.6:58768 as n8n_trigger_1 (p4, c1, k60, u'admin').
+1772064774: Client n8n_trigger_1 [172.19.0.6:58768] disconnected.
+1772064837: New connection from 172.19.0.6:39152 on port 1883.
+1772064837: New client connected from 172.19.0.6:39152 as n8n_trigger_1 (p4, c1, k60, u'admin').
+1772064864: Client n8n_trigger_1 [172.19.0.6:39152] disconnected.
+1772065011: New connection from 172.19.0.6:56272 on port 1883.
+1772065011: New client connected from 172.19.0.6:56272 as n8n_trigger_1 (p4, c1, k60, u'admin').
+1772065014: Client n8n_trigger_1 [172.19.0.6:56272] disconnected.
+1772065055: Client sensor_sim [172.19.0.1:60764] disconnected.
+1772065057: New connection from 172.19.0.6:38346 on port 1883.
+1772065057: New client connected from 172.19.0.6:38346 as n8n_trigger_1 (p4, c1, k60, u'admin').
+1772065078: New connection from 172.19.0.1:49250 on port 1883.
+1772065078: New client connected from 172.19.0.1:49250 as sensor_sim (p4, c1, k60).
+1772065093: Client sensor_sim [172.19.0.1:49250] disconnected.
+1772065208: Client n8n_trigger_1 [172.19.0.6:38346] disconnected.
+1772065208: New connection from 172.19.0.6:52830 on port 1883.
+1772065208: New client connected from 172.19.0.6:52830 as n8n_trigger_1 (p4, c1, k60, u'admin').
+1772065213: New connection from 172.19.0.1:55512 on port 1883.
+1772065213: New client connected from 172.19.0.1:55512 as sensor_sim (p4, c1, k60).
+1772065242: Client sensor_sim [172.19.0.1:55512] disconnected.
+1772065282: Client n8n_trigger_1 [172.19.0.6:52830] disconnected.
+1772065282: New connection from 172.19.0.6:57824 on port 1883.
+1772065282: New client connected from 172.19.0.6:57824 as n8n_trigger_1 (p4, c1, k60, u'admin').
+1772065287: New connection from 172.19.0.1:49668 on port 1883.
+1772065287: New client connected from 172.19.0.1:49668 as sensor_sim (p4, c1, k60).
+1772065303: Client sensor_sim [172.19.0.1:49668] disconnected.
+1772065452: Client n8n_trigger_1 [172.19.0.6:57824] disconnected.
+1772065452: New connection from 172.19.0.6:57100 on port 1883.
+1772065452: New client connected from 172.19.0.6:57100 as n8n_trigger_1 (p4, c1, k60, u'admin').
+1772065458: New connection from 172.19.0.1:47604 on port 1883.
+1772065458: New client connected from 172.19.0.1:47604 as sensor_sim (p4, c1, k60).
+1772065474: Client sensor_sim [172.19.0.1:47604] disconnected.
+1772065507: Saving in-memory database to /mosquitto/data//mosquitto.db.
+1772065595: Client n8n_trigger_1 [172.19.0.6:57100] disconnected.
+1772065595: New connection from 172.19.0.6:45974 on port 1883.
+1772065595: New client connected from 172.19.0.6:45974 as n8n_trigger_1 (p4, c1, k60, u'admin').
+1772065606: New connection from 172.19.0.1:40098 on port 1883.
+1772065606: New client connected from 172.19.0.1:40098 as sensor_sim (p4, c1, k60).
+1772065620: Client sensor_sim [172.19.0.1:40098] disconnected.
+1772066020: Client n8n_trigger_1 [172.19.0.6:45974] disconnected.
+1772066021: New connection from 172.19.0.6:38208 on port 1883.
+1772066021: New client connected from 172.19.0.6:38208 as n8n_trigger_1 (p4, c1, k60, u'admin').
+1772066028: New connection from 172.19.0.1:56774 on port 1883.
+1772066028: New client connected from 172.19.0.1:56774 as sensor_sim (p4, c1, k60).
+1772066038: Client sensor_sim [172.19.0.1:56774] disconnected.
+1772066330: Client n8n_trigger_1 [172.19.0.6:38208] disconnected.
+1772066330: New connection from 172.19.0.6:56306 on port 1883.
+1772066330: New client connected from 172.19.0.6:56306 as n8n_trigger_1 (p4, c1, k60, u'admin').
+1772066334: New connection from 172.19.0.1:41076 on port 1883.
+1772066334: New client connected from 172.19.0.1:41076 as sensor_sim (p4, c1, k60).
+1772066396: Client sensor_sim [172.19.0.1:41076] disconnected.
+1772066406: New connection from 172.19.0.1:43612 on port 1883.
+1772066406: New client connected from 172.19.0.1:43612 as sensor_sim (p4, c1, k60).
+1772066536: Client sensor_sim [172.19.0.1:43612] disconnected.
+1772066539: New connection from 172.19.0.1:43650 on port 1883.
+1772066539: New client connected from 172.19.0.1:43650 as sensor_sim (p4, c1, k60).
+1772066545: Client sensor_sim [172.19.0.1:43650] disconnected.
+1772066946: Client n8n_trigger_1 [172.19.0.6:56306] disconnected.
+1772066946: New connection from 172.19.0.6:51064 on port 1883.
+1772066946: New client connected from 172.19.0.6:51064 as n8n_trigger_1 (p4, c1, k60, u'admin').
+1772066952: New connection from 172.19.0.1:38128 on port 1883.
+1772066952: New client connected from 172.19.0.1:38128 as sensor_sim (p4, c1, k60).
+1772066957: Client sensor_sim [172.19.0.1:38128] disconnected.
+1772067308: Saving in-memory database to /mosquitto/data//mosquitto.db.
+1772067495: Client n8n_trigger_1 [172.19.0.6:51064] disconnected.
+1772067495: New connection from 172.19.0.6:55996 on port 1883.
+1772067495: New client connected from 172.19.0.6:55996 as n8n_trigger_1 (p4, c1, k60, u'admin').
+1772067499: New connection from 172.19.0.1:49114 on port 1883.
+1772067499: New client connected from 172.19.0.1:49114 as sensor_sim (p4, c1, k60).
+1772067502: Client sensor_sim [172.19.0.1:49114] disconnected.
+1772068347: New connection from 172.19.0.1:56048 on port 1883.
+1772068347: New client connected from 172.19.0.1:56048 as sensor_sim (p4, c1, k60).
+1772069109: Saving in-memory database to /mosquitto/data//mosquitto.db.
+1772070910: Saving in-memory database to /mosquitto/data//mosquitto.db.
+1772071356: Client sensor_sim [172.19.0.1:56048] disconnected.
+1772075648: New connection from 172.19.0.1:59840 on port 1883.
+1772075648: New client connected from 172.19.0.1:59840 as sensor_sim (p4, c1, k60).
+1772075652: New connection from 172.19.0.6:36580 on port 1883.
+1772075652: Client n8n_trigger_1 [172.19.0.6:55996] disconnected: session taken over.
+1772075652: New client connected from 172.19.0.6:36580 as n8n_trigger_1 (p4, c1, k60, u'admin').
+1772075653: New connection from 172.19.0.6:36596 on port 1883.
+1772075653: Client n8n_trigger_1 [172.19.0.6:36580] disconnected: session taken over.
+1772075653: New client connected from 172.19.0.6:36596 as n8n_trigger_1 (p4, c1, k60, u'admin').
+1772075654: New connection from 172.19.0.6:36606 on port 1883.
+1772075654: Client n8n_trigger_1 [172.19.0.6:36596] disconnected: session taken over.
+1772075654: New client connected from 172.19.0.6:36606 as n8n_trigger_1 (p4, c1, k60, u'admin').
+1772075655: New connection from 172.19.0.6:36622 on port 1883.
+1772075655: Client n8n_trigger_1 [172.19.0.6:36606] disconnected: session taken over.
+1772075655: New client connected from 172.19.0.6:36622 as n8n_trigger_1 (p4, c1, k60, u'admin').
+1772075656: New connection from 172.19.0.6:36624 on port 1883.
+1772075656: Client n8n_trigger_1 [172.19.0.6:36622] disconnected: session taken over.
+1772075656: New client connected from 172.19.0.6:36624 as n8n_trigger_1 (p4, c1, k60, u'admin').
+1772075657: New connection from 172.19.0.6:36640 on port 1883.
+1772075657: Client n8n_trigger_1 [172.19.0.6:36624] disconnected: session taken over.
+1772075657: New client connected from 172.19.0.6:36640 as n8n_trigger_1 (p4, c1, k60, u'admin').
+1772075658: New connection from 172.19.0.6:45856 on port 1883.
+1772075658: Client n8n_trigger_1 [172.19.0.6:36640] disconnected: session taken over.
+1772075658: New client connected from 172.19.0.6:45856 as n8n_trigger_1 (p4, c1, k60, u'admin').
+1772075659: New connection from 172.19.0.6:45862 on port 1883.
+1772075659: Client n8n_trigger_1 [172.19.0.6:45856] disconnected: session taken over.
+1772075659: New client connected from 172.19.0.6:45862 as n8n_trigger_1 (p4, c1, k60, u'admin').
+1772075660: New connection from 172.19.0.6:45870 on port 1883.
+1772075660: Client n8n_trigger_1 [172.19.0.6:45862] disconnected: session taken over.
+1772075660: New client connected from 172.19.0.6:45870 as n8n_trigger_1 (p4, c1, k60, u'admin').
+1772075661: New connection from 172.19.0.6:45878 on port 1883.
+1772075661: Client n8n_trigger_1 [172.19.0.6:45870] disconnected: session taken over.
+1772075661: New client connected from 172.19.0.6:45878 as n8n_trigger_1 (p4, c1, k60, u'admin').
+1772075662: New connection from 172.19.0.6:45882 on port 1883.
+1772075662: Client n8n_trigger_1 [172.19.0.6:45878] disconnected: session taken over.
+1772075662: New client connected from 172.19.0.6:45882 as n8n_trigger_1 (p4, c1, k60, u'admin').
+1772075663: New connection from 172.19.0.6:45898 on port 1883.
+1772075663: Client n8n_trigger_1 [172.19.0.6:45882] disconnected: session taken over.
+1772075663: New client connected from 172.19.0.6:45898 as n8n_trigger_1 (p4, c1, k60, u'admin').
+1772075664: New connection from 172.19.0.6:45904 on port 1883.
+1772075664: Client n8n_trigger_1 [172.19.0.6:45898] disconnected: session taken over.
+1772075664: New client connected from 172.19.0.6:45904 as n8n_trigger_1 (p4, c1, k60, u'admin').
+1772075665: New connection from 172.19.0.6:45914 on port 1883.
+1772075665: Client n8n_trigger_1 [172.19.0.6:45904] disconnected: session taken over.
+1772075665: New client connected from 172.19.0.6:45914 as n8n_trigger_1 (p4, c1, k60, u'admin').
+1772075666: New connection from 172.19.0.6:45916 on port 1883.
+1772075666: Client n8n_trigger_1 [172.19.0.6:45914] disconnected: session taken over.
+1772075666: New client connected from 172.19.0.6:45916 as n8n_trigger_1 (p4, c1, k60, u'admin').
+1772075667: New connection from 172.19.0.6:45924 on port 1883.
+1772075667: Client n8n_trigger_1 [172.19.0.6:45916] disconnected: session taken over.
+1772075667: New client connected from 172.19.0.6:45924 as n8n_trigger_1 (p4, c1, k60, u'admin').
+1772075668: New connection from 172.19.0.6:36244 on port 1883.
+1772075668: Client n8n_trigger_1 [172.19.0.6:45924] disconnected: session taken over.
+1772075668: New client connected from 172.19.0.6:36244 as n8n_trigger_1 (p4, c1, k60, u'admin').
+1772075669: New connection from 172.19.0.6:36254 on port 1883.
+1772075669: Client n8n_trigger_1 [172.19.0.6:36244] disconnected: session taken over.
+1772075669: New client connected from 172.19.0.6:36254 as n8n_trigger_1 (p4, c1, k60, u'admin').
+1772075670: New connection from 172.19.0.6:36256 on port 1883.
+1772075670: Client n8n_trigger_1 [172.19.0.6:36254] disconnected: session taken over.
+1772075670: New client connected from 172.19.0.6:36256 as n8n_trigger_1 (p4, c1, k60, u'admin').
+1772075671: New connection from 172.19.0.6:36258 on port 1883.
+1772075671: Client n8n_trigger_1 [172.19.0.6:36256] disconnected: session taken over.
+1772075671: New client connected from 172.19.0.6:36258 as n8n_trigger_1 (p4, c1, k60, u'admin').
+1772075672: New connection from 172.19.0.6:36268 on port 1883.
+1772075672: Client n8n_trigger_1 [172.19.0.6:36258] disconnected: session taken over.
+1772075672: New client connected from 172.19.0.6:36268 as n8n_trigger_1 (p4, c1, k60, u'admin').
+1772075673: New connection from 172.19.0.6:36270 on port 1883.
+1772075673: Client n8n_trigger_1 [172.19.0.6:36268] disconnected: session taken over.
+1772075673: New client connected from 172.19.0.6:36270 as n8n_trigger_1 (p4, c1, k60, u'admin').
+1772075674: New connection from 172.19.0.6:36272 on port 1883.
+1772075674: Client n8n_trigger_1 [172.19.0.6:36270] disconnected: session taken over.
+1772075674: New client connected from 172.19.0.6:36272 as n8n_trigger_1 (p4, c1, k60, u'admin').
+1772075675: New connection from 172.19.0.6:36278 on port 1883.
+1772075675: Client n8n_trigger_1 [172.19.0.6:36272] disconnected: session taken over.
+1772075675: New client connected from 172.19.0.6:36278 as n8n_trigger_1 (p4, c1, k60, u'admin').
+1772075676: New connection from 172.19.0.6:36280 on port 1883.
+1772075676: Client n8n_trigger_1 [172.19.0.6:36278] disconnected: session taken over.
+1772075676: New client connected from 172.19.0.6:36280 as n8n_trigger_1 (p4, c1, k60, u'admin').
+1772075677: New connection from 172.19.0.6:36288 on port 1883.
+1772075677: Client n8n_trigger_1 [172.19.0.6:36280] disconnected: session taken over.
+1772075677: New client connected from 172.19.0.6:36288 as n8n_trigger_1 (p4, c1, k60, u'admin').
+1772075678: New connection from 172.19.0.6:50614 on port 1883.
+1772075678: Client n8n_trigger_1 [172.19.0.6:36288] disconnected: session taken over.
+1772075678: New client connected from 172.19.0.6:50614 as n8n_trigger_1 (p4, c1, k60, u'admin').
+1772075679: New connection from 172.19.0.6:50622 on port 1883.
+1772075679: Client n8n_trigger_1 [172.19.0.6:50614] disconnected: session taken over.
+1772075679: New client connected from 172.19.0.6:50622 as n8n_trigger_1 (p4, c1, k60, u'admin').
+1772075680: New connection from 172.19.0.6:50628 on port 1883.
+1772075680: Client n8n_trigger_1 [172.19.0.6:50622] disconnected: session taken over.
+1772075680: New client connected from 172.19.0.6:50628 as n8n_trigger_1 (p4, c1, k60, u'admin').
+1772075681: New connection from 172.19.0.6:50638 on port 1883.
+1772075681: Client n8n_trigger_1 [172.19.0.6:50628] disconnected: session taken over.
+1772075681: New client connected from 172.19.0.6:50638 as n8n_trigger_1 (p4, c1, k60, u'admin').
+1772075682: New connection from 172.19.0.6:50640 on port 1883.
+1772075682: Client n8n_trigger_1 [172.19.0.6:50638] disconnected: session taken over.
+1772075682: New client connected from 172.19.0.6:50640 as n8n_trigger_1 (p4, c1, k60, u'admin').
+1772075683: New connection from 172.19.0.6:50644 on port 1883.
+1772075683: Client n8n_trigger_1 [172.19.0.6:50640] disconnected: session taken over.
+1772075683: New client connected from 172.19.0.6:50644 as n8n_trigger_1 (p4, c1, k60, u'admin').
+1772075684: New connection from 172.19.0.6:50654 on port 1883.
+1772075684: Client n8n_trigger_1 [172.19.0.6:50644] disconnected: session taken over.
+1772075684: New client connected from 172.19.0.6:50654 as n8n_trigger_1 (p4, c1, k60, u'admin').
+1772075685: New connection from 172.19.0.6:50662 on port 1883.
+1772075685: Client n8n_trigger_1 [172.19.0.6:50654] disconnected: session taken over.
+1772075685: New client connected from 172.19.0.6:50662 as n8n_trigger_1 (p4, c1, k60, u'admin').
+1772075686: New connection from 172.19.0.6:50674 on port 1883.
+1772075686: Client n8n_trigger_1 [172.19.0.6:50662] disconnected: session taken over.
+1772075686: New client connected from 172.19.0.6:50674 as n8n_trigger_1 (p4, c1, k60, u'admin').
+1772075687: New connection from 172.19.0.6:50676 on port 1883.
+1772075687: Client n8n_trigger_1 [172.19.0.6:50674] disconnected: session taken over.
+1772075687: New client connected from 172.19.0.6:50676 as n8n_trigger_1 (p4, c1, k60, u'admin').
+1772075688: New connection from 172.19.0.6:56588 on port 1883.
+1772075688: Client n8n_trigger_1 [172.19.0.6:50676] disconnected: session taken over.
+1772075688: New client connected from 172.19.0.6:56588 as n8n_trigger_1 (p4, c1, k60, u'admin').
+1772075689: New connection from 172.19.0.6:56600 on port 1883.
+1772075689: Client n8n_trigger_1 [172.19.0.6:56588] disconnected: session taken over.
+1772075689: New client connected from 172.19.0.6:56600 as n8n_trigger_1 (p4, c1, k60, u'admin').
+1772075690: New connection from 172.19.0.6:56606 on port 1883.
+1772075690: Client n8n_trigger_1 [172.19.0.6:56600] disconnected: session taken over.
+1772075690: New client connected from 172.19.0.6:56606 as n8n_trigger_1 (p4, c1, k60, u'admin').
+1772075691: New connection from 172.19.0.6:56608 on port 1883.
+1772075691: Client n8n_trigger_1 [172.19.0.6:56606] disconnected: session taken over.
+1772075691: New client connected from 172.19.0.6:56608 as n8n_trigger_1 (p4, c1, k60, u'admin').
+1772075692: New connection from 172.19.0.6:56610 on port 1883.
+1772075692: Client n8n_trigger_1 [172.19.0.6:56608] disconnected: session taken over.
+1772075692: New client connected from 172.19.0.6:56610 as n8n_trigger_1 (p4, c1, k60, u'admin').
+1772075693: New connection from 172.19.0.6:56626 on port 1883.
+1772075693: Client n8n_trigger_1 [172.19.0.6:56610] disconnected: session taken over.
+1772075693: New client connected from 172.19.0.6:56626 as n8n_trigger_1 (p4, c1, k60, u'admin').
+1772075694: New connection from 172.19.0.6:56638 on port 1883.
+1772075694: Client n8n_trigger_1 [172.19.0.6:56626] disconnected: session taken over.
+1772075694: New client connected from 172.19.0.6:56638 as n8n_trigger_1 (p4, c1, k60, u'admin').
+1772075695: New connection from 172.19.0.6:56642 on port 1883.
+1772075695: Client n8n_trigger_1 [172.19.0.6:56638] disconnected: session taken over.
+1772075695: New client connected from 172.19.0.6:56642 as n8n_trigger_1 (p4, c1, k60, u'admin').
+1772075696: New connection from 172.19.0.6:56648 on port 1883.
+1772075696: Client n8n_trigger_1 [172.19.0.6:56642] disconnected: session taken over.
+1772075696: New client connected from 172.19.0.6:56648 as n8n_trigger_1 (p4, c1, k60, u'admin').
+1772075697: New connection from 172.19.0.6:56658 on port 1883.
+1772075697: Client n8n_trigger_1 [172.19.0.6:56648] disconnected: session taken over.
+1772075697: New client connected from 172.19.0.6:56658 as n8n_trigger_1 (p4, c1, k60, u'admin').
+1772075698: New connection from 172.19.0.6:56592 on port 1883.
+1772075698: Client n8n_trigger_1 [172.19.0.6:56658] disconnected: session taken over.
+1772075698: New client connected from 172.19.0.6:56592 as n8n_trigger_1 (p4, c1, k60, u'admin').
+1772075699: New connection from 172.19.0.6:56596 on port 1883.
+1772075699: Client n8n_trigger_1 [172.19.0.6:56592] disconnected: session taken over.
+1772075699: New client connected from 172.19.0.6:56596 as n8n_trigger_1 (p4, c1, k60, u'admin').
+1772075700: New connection from 172.19.0.6:56604 on port 1883.
+1772075700: Client n8n_trigger_1 [172.19.0.6:56596] disconnected: session taken over.
+1772075700: New client connected from 172.19.0.6:56604 as n8n_trigger_1 (p4, c1, k60, u'admin').
+1772075701: New connection from 172.19.0.6:56614 on port 1883.
+1772075701: Client n8n_trigger_1 [172.19.0.6:56604] disconnected: session taken over.
+1772075701: New client connected from 172.19.0.6:56614 as n8n_trigger_1 (p4, c1, k60, u'admin').
+1772075702: New connection from 172.19.0.6:56630 on port 1883.
+1772075702: Client n8n_trigger_1 [172.19.0.6:56614] disconnected: session taken over.
+1772075702: New client connected from 172.19.0.6:56630 as n8n_trigger_1 (p4, c1, k60, u'admin').
+1772075703: New connection from 172.19.0.6:56644 on port 1883.
+1772075703: Client n8n_trigger_1 [172.19.0.6:56630] disconnected: session taken over.
+1772075703: New client connected from 172.19.0.6:56644 as n8n_trigger_1 (p4, c1, k60, u'admin').
+1772075815: Client sensor_sim [172.19.0.1:59840] disconnected.
+1772075823: New connection from 172.19.0.1:41132 on port 1883.
+1772075823: New client connected from 172.19.0.1:41132 as sensor_sim (p4, c1, k60).
+1772075865: Client sensor_sim [172.19.0.1:41132] disconnected.
+1772076084: Saving in-memory database to /mosquitto/data//mosquitto.db.
+1772077885: Saving in-memory database to /mosquitto/data//mosquitto.db.
+1772078498: Client n8n_trigger_1 [172.19.0.6:56644] disconnected.
+1772078500: mosquitto version 2.1.2 terminating
+1772078500: Saving in-memory database to /mosquitto/data//mosquitto.db.
+1772078562: mosquitto version 2.1.2 starting
+1772078562: Config loaded from /mosquitto/config/mosquitto.conf.
+1772078562: Bridge support available.
+1772078562: Persistence support available.
+1772078562: TLS support available.
+1772078562: TLS-PSK support available.
+1772078562: Websockets support available.
+1772078562: Opening ipv4 listen socket on port 1883.
+1772078562: Opening ipv6 listen socket on port 1883.
+1772078562: mosquitto version 2.1.2 running
+1772078574: New connection from 172.19.0.6:45180 on port 1883.
+1772078574: New client connected from 172.19.0.6:45180 as n8n_trigger_1 (p4, c1, k60, u'admin').
