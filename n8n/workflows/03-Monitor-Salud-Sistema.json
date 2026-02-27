@@ -1,0 +1,233 @@
+{
+    "name": "Monitor-Salud-Sistema",
+    "nodes": [
+        {
+            "parameters": {
+                "rule": {
+                    "interval": [
+                        {
+                            "field": "minutes",
+                            "minutesInterval": 5
+                        }
+                    ]
+                }
+            },
+            "type": "n8n-nodes-base.scheduleTrigger",
+            "typeVersion": 1.2,
+            "position": [
+                -600,
+                300
+            ],
+            "id": "health-schedule-id",
+            "name": "Cada 5 minutos"
+        },
+        {
+            "parameters": {
+                "operation": "executeQuery",
+                "query": "SELECT\n  e.area,\n  ROUND(e.reading::numeric, 2) AS ultima_lectura_kwh,\n  e.severity AS estado,\n  e.timestamp AS ultima_vez,\n  EXTRACT(EPOCH FROM (NOW() - e.timestamp)) / 60 AS minutos_sin_reportar\nFROM energy_history e\nWHERE (e.area, e.timestamp) IN (\n    SELECT area, MAX(timestamp) FROM energy_history GROUP BY area\n)\nORDER BY minutos_sin_reportar DESC;",
+                "options": {}
+            },
+            "type": "n8n-nodes-base.postgres",
+            "typeVersion": 2.6,
+            "position": [
+                -380,
+                300
+            ],
+            "id": "health-check-query-id",
+            "name": "Verificar Últimas Lecturas",
+            "credentials": {
+                "postgres": {
+                    "id": "new-postgres-cred-id",
+                    "name": "Postgres local"
+                }
+            }
+        },
+        {
+            "parameters": {
+                "jsCode": "const rows = $input.all().map(i => i.json);\nconst UMBRAL_MINUTOS = 10;\nconst UMBRAL_KWH_ALTO = 15;\n\nconst areasOffline = rows.filter(r => Number(r.minutos_sin_reportar) > UMBRAL_MINUTOS);\nconst areasConsumoAlto = rows.filter(r => Number(r.ultima_lectura_kwh) > UMBRAL_KWH_ALTO && r.estado !== 'Normal');\n\nconst hayProblemas = areasOffline.length > 0 || areasConsumoAlto.length > 0;\n\nif (!hayProblemas) {\n  return [{ json: { alerta: false } }];\n}\n\nlet msg = `🏥 <b>MONITOR DE SALUD — ALERTA</b>\\n`;\nmsg += `━━━━━━━━━━━━━━━━━━━━\\n`;\nmsg += `🕒 <i>${new Date().toLocaleString('es-ES', {timeZone:'America/Lima'})}</i>\\n\\n`;\n\nif (areasOffline.length > 0) {\n  msg += `<b>🔴 SENSORES SIN REPORTAR</b>\\n`;\n  areasOffline.forEach(r => {\n    const mins = Math.round(Number(r.minutos_sin_reportar));\n    msg += `  ⚫ <b>${r.area}</b>: ${mins} min sin datos\\n`;\n  });\n  msg += `\\n`;\n}\n\nif (areasConsumoAlto.length > 0) {\n  msg += `<b>🟠 CONSUMO PERSISTENTEMENTE ALTO</b>\\n`;\n  areasConsumoAlto.forEach(r => {\n    msg += `  ⚠️ <b>${r.area}</b>: ${r.ultima_lectura_kwh} kWh (${r.estado})\\n`;\n  });\n  msg += `\\n`;\n}\n\nmsg += `━━━━━━━━━━━━━━━━━━━━\\n`;\nmsg += `🤖 <i>Verificación automática del sistema</i>`;\n\nreturn [{ json: { alerta: true, text: msg } }];"
+            },
+            "type": "n8n-nodes-base.code",
+            "typeVersion": 2,
+            "position": [
+                -160,
+                300
+            ],
+            "id": "health-evaluate-id",
+            "name": "Evaluar Salud"
+        },
+        {
+            "parameters": {
+                "rules": {
+                    "values": [
+                        {
+                            "conditions": {
+                                "options": {
+                                    "caseSensitive": true,
+                                    "typeValidation": "strict",
+                                    "version": 3
+                                },
+                                "conditions": [
+                                    {
+                                        "id": "hc1",
+                                        "leftValue": "={{ $json.alerta }}",
+                                        "rightValue": "={{ true }}",
+                                        "operator": {
+                                            "type": "boolean",
+                                            "operation": "true",
+                                            "singleValue": true
+                                        }
+                                    }
+                                ],
+                                "combinator": "and"
+                            },
+                            "renameOutput": true,
+                            "outputKey": "Hay Problema"
+                        },
+                        {
+                            "conditions": {
+                                "options": {
+                                    "caseSensitive": true,
+                                    "typeValidation": "strict",
+                                    "version": 3
+                                },
+                                "conditions": [
+                                    {
+                                        "id": "hc2",
+                                        "leftValue": "={{ $json.alerta }}",
+                                        "rightValue": "={{ false }}",
+                                        "operator": {
+                                            "type": "boolean",
+                                            "operation": "false",
+                                            "singleValue": true
+                                        }
+                                    }
+                                ],
+                                "combinator": "and"
+                            },
+                            "renameOutput": true,
+                            "outputKey": "Todo OK"
+                        }
+                    ]
+                },
+                "options": {}
+            },
+            "type": "n8n-nodes-base.switch",
+            "typeVersion": 3.4,
+            "position": [
+                60,
+                300
+            ],
+            "id": "health-switch-id",
+            "name": "¿Hay Problema?"
+        },
+        {
+            "parameters": {
+                "method": "POST",
+                "url": "=https://api.telegram.org/bot{{ $env.TELEGRAM_TOKEN }}/sendMessage",
+                "sendBody": true,
+                "bodyParameters": {
+                    "parameters": [
+                        {
+                            "name": "chat_id",
+                            "value": "={{ $env.TELEGRAM_CHAT_ID }}"
+                        },
+                        {
+                            "name": "text",
+                            "value": "={{ $json.text }}"
+                        },
+                        {
+                            "name": "parse_mode",
+                            "value": "HTML"
+                        },
+                        {
+                            "name": "reply_markup",
+                            "value": "={{ JSON.stringify({ inline_keyboard: [[{text:'📊 Ver Estado', callback_data:'get_status'}, {text:'🚨 Ver Anomalías', callback_data:'get_anomalias'}]] }) }}"
+                        }
+                    ]
+                },
+                "options": {}
+            },
+            "type": "n8n-nodes-base.httpRequest",
+            "typeVersion": 4.4,
+            "position": [
+                280,
+                200
+            ],
+            "id": "health-alert-telegram-id",
+            "name": "Alertar por Telegram"
+        },
+        {
+            "parameters": {},
+            "type": "n8n-nodes-base.noOp",
+            "typeVersion": 1,
+            "position": [
+                280,
+                400
+            ],
+            "id": "health-noop-id",
+            "name": "Sistema OK (No hacer nada)"
+        }
+    ],
+    "connections": {
+        "Cada 5 minutos": {
+            "main": [
+                [
+                    {
+                        "node": "Verificar Últimas Lecturas",
+                        "type": "main",
+                        "index": 0
+                    }
+                ]
+            ]
+        },
+        "Verificar Últimas Lecturas": {
+            "main": [
+                [
+                    {
+                        "node": "Evaluar Salud",
+                        "type": "main",
+                        "index": 0
+                    }
+                ]
+            ]
+        },
+        "Evaluar Salud": {
+            "main": [
+                [
+                    {
+                        "node": "¿Hay Problema?",
+                        "type": "main",
+                        "index": 0
+                    }
+                ]
+            ]
+        },
+        "¿Hay Problema?": {
+            "main": [
+                [
+                    {
+                        "node": "Alertar por Telegram",
+                        "type": "main",
+                        "index": 0
+                    }
+                ],
+                [
+                    {
+                        "node": "Sistema OK (No hacer nada)",
+                        "type": "main",
+                        "index": 0
+                    }
+                ]
+            ]
+        }
+    },
+    "active": false,
+    "settings": {
+        "executionOrder": "v1",
+        "timezone": "America/Lima"
+    },
+    "meta": {
+        "templateCredsSetupCompleted": true
+    },
+    "tags": []
+}

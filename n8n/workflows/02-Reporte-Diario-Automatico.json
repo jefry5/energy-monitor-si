@@ -1,0 +1,298 @@
+{
+    "name": "Reporte-Diario-Automatico",
+    "nodes": [
+        {
+            "parameters": {
+                "rule": {
+                    "interval": [
+                        {
+                            "triggerAtHour": 8,
+                            "triggerAtMinute": 0
+                        }
+                    ]
+                }
+            },
+            "type": "n8n-nodes-base.scheduleTrigger",
+            "typeVersion": 1.2,
+            "position": [
+                -600,
+                300
+            ],
+            "id": "schedule-daily-id",
+            "name": "Diario 8:00 AM"
+        },
+        {
+            "parameters": {
+                "operation": "executeQuery",
+                "query": "SELECT\n  area,\n  ROUND(SUM(reading)::numeric, 2) AS total_kwh,\n  ROUND(AVG(reading)::numeric, 2) AS promedio_kwh,\n  ROUND(MAX(reading)::numeric, 2) AS pico_kwh,\n  COUNT(*) AS lecturas,\n  MAX(severity) AS estado_max\nFROM energy_history\nWHERE timestamp >= NOW() - INTERVAL '24 hours'\nGROUP BY area\nORDER BY total_kwh DESC;",
+                "options": {}
+            },
+            "type": "n8n-nodes-base.postgres",
+            "typeVersion": 2.6,
+            "position": [
+                -380,
+                300
+            ],
+            "id": "daily-report-data-id",
+            "name": "Datos 24h",
+            "credentials": {
+                "postgres": {
+                    "id": "new-postgres-cred-id",
+                    "name": "Postgres local"
+                }
+            }
+        },
+        {
+            "parameters": {
+                "operation": "executeQuery",
+                "query": "SELECT\n  COUNT(*) AS total_anomalias,\n  COUNT(*) FILTER (WHERE severidad = 'Critico') AS criticas,\n  COUNT(*) FILTER (WHERE severidad = 'Advertencia') AS advertencias\nFROM anomalias\nWHERE timestamp >= NOW() - INTERVAL '24 hours';",
+                "options": {}
+            },
+            "type": "n8n-nodes-base.postgres",
+            "typeVersion": 2.6,
+            "position": [
+                -380,
+                500
+            ],
+            "id": "daily-anomaly-count-id",
+            "name": "Conteo Anomalías 24h",
+            "credentials": {
+                "postgres": {
+                    "id": "new-postgres-cred-id",
+                    "name": "Postgres local"
+                }
+            }
+        },
+        {
+            "parameters": {
+                "mode": "combine",
+                "combineBy": "combineAll",
+                "options": {}
+            },
+            "type": "n8n-nodes-base.merge",
+            "typeVersion": 3.1,
+            "position": [
+                -160,
+                400
+            ],
+            "id": "merge-daily-data-id",
+            "name": "Unir Datos"
+        },
+        {
+            "parameters": {
+                "jsCode": "const energyRows = $('Datos 24h').all().map(i => i.json);\nconst anomalyData = $('Conteo Anomalías 24h').first().json;\n\nconst totalKwh = energyRows.reduce((s, r) => s + Number(r.total_kwh || 0), 0);\nconst costoEstimado = (totalKwh * 0.18).toFixed(2);\nconst co2 = (totalKwh * 0.233).toFixed(2);\nconst anomTotal = Number(anomalyData.total_anomalias || 0);\nconst anomCrit = Number(anomalyData.criticas || 0);\nconst anomWarn = Number(anomalyData.advertencias || 0);\n\nconst sevIcon = { Normal: '✅', Warning: '⚠️', Critical: '🚨' };\n\nlet msg = `📋 <b>REPORTE DIARIO AUTOMÁTICO</b>\\n`;\nmsg += `━━━━━━━━━━━━━━━━━━━━\\n`;\nmsg += `🕒 <i>${new Date().toLocaleString('es-ES', {timeZone:'America/Lima'})}</i>\\n`;\nmsg += `📊 Período: Últimas 24 horas\\n\\n`;\n\nmsg += `<b>⚡ CONSUMO POR ÁREA</b>\\n`;\nenergyRows.forEach(r => {\n  const icon = sevIcon[r.estado_max] || '⚪';\n  msg += `${icon} <b>${r.area}</b>: ${r.total_kwh} kWh (pico: ${r.pico_kwh})\\n`;\n});\n\nmsg += `\\n<b>🏭 RESUMEN GLOBAL</b>\\n`;\nmsg += `⚡ Total: <b>${totalKwh.toFixed(2)} kWh</b>\\n`;\nmsg += `💰 Costo: <b>S/. ${costoEstimado}</b>\\n`;\nmsg += `🌱 CO₂: <b>${co2} kg</b>\\n\\n`;\n\nmsg += `<b>🚨 ANOMALÍAS DETECTADAS</b>\\n`;\nif (anomTotal === 0) {\n  msg += `✅ Sin anomalías en las últimas 24h\\n`;\n} else {\n  msg += `🔴 Críticas: <b>${anomCrit}</b>\\n`;\n  msg += `🟠 Advertencias: <b>${anomWarn}</b>\\n`;\n  msg += `📊 Total: <b>${anomTotal}</b>\\n`;\n}\n\nmsg += `\\n━━━━━━━━━━━━━━━━━━━━\\n`;\nmsg += `🤖 <i>Reporte generado automáticamente por EnergyCore v2</i>`;\n\n// Prepare data summary for Gemini\nconst dataSummary = energyRows.map(r => `${r.area}: ${r.total_kwh} kWh (avg: ${r.promedio_kwh}, peak: ${r.pico_kwh})`).join(', ');\n\nreturn [{ json: { report_text: msg, data_summary: dataSummary, total_kwh: totalKwh.toFixed(2), anomalias: anomTotal } }];"
+            },
+            "type": "n8n-nodes-base.code",
+            "typeVersion": 2,
+            "position": [
+                60,
+                400
+            ],
+            "id": "format-daily-report-id",
+            "name": "Formatear Reporte Diario"
+        },
+        {
+            "parameters": {
+                "method": "POST",
+                "url": "=https://api.telegram.org/bot{{ $env.TELEGRAM_TOKEN }}/sendMessage",
+                "sendBody": true,
+                "bodyParameters": {
+                    "parameters": [
+                        {
+                            "name": "chat_id",
+                            "value": "={{ $env.TELEGRAM_CHAT_ID }}"
+                        },
+                        {
+                            "name": "text",
+                            "value": "={{ $json.report_text }}"
+                        },
+                        {
+                            "name": "parse_mode",
+                            "value": "HTML"
+                        }
+                    ]
+                },
+                "options": {}
+            },
+            "type": "n8n-nodes-base.httpRequest",
+            "typeVersion": 4.4,
+            "position": [
+                280,
+                300
+            ],
+            "id": "send-daily-report-id",
+            "name": "Enviar Reporte Diario"
+        },
+        {
+            "parameters": {
+                "promptType": "define",
+                "text": "=Eres un analista de eficiencia energética. Analiza este resumen de consumo de las últimas 24h de un edificio universitario:\n\n{{ $json.data_summary }}\n\nTotal: {{ $json.total_kwh }} kWh\nAnomalías detectadas: {{ $json.anomalias }}\n\nGenera un análisis BREVE (máximo 4 líneas) con:\n1. El área de mayor preocupación\n2. Si el consumo global está en rango aceptable\n3. Una recomendación concreta para hoy\n\nResponde en español, directo y profesional.",
+                "messages": {
+                    "messageValues": [
+                        {
+                            "message": "Eres un asistente de eficiencia energética conciso. Responde en español, máximo 4 líneas."
+                        }
+                    ]
+                },
+                "batching": {}
+            },
+            "type": "@n8n/n8n-nodes-langchain.chainLlm",
+            "typeVersion": 1.9,
+            "position": [
+                280,
+                500
+            ],
+            "id": "daily-ai-analysis-id",
+            "name": "Análisis IA Diario"
+        },
+        {
+            "parameters": {
+                "options": {}
+            },
+            "type": "@n8n/n8n-nodes-langchain.lmChatGoogleGemini",
+            "typeVersion": 1,
+            "position": [
+                280,
+                660
+            ],
+            "id": "gemini-daily-id",
+            "name": "Gemini Diario",
+            "credentials": {
+                "googlePalmApi": {
+                    "id": "KCTdNJeeCP1jXUX5",
+                    "name": "Google Gemini(PaLM) Api account"
+                }
+            }
+        },
+        {
+            "parameters": {
+                "method": "POST",
+                "url": "=https://api.telegram.org/bot{{ $env.TELEGRAM_TOKEN }}/sendMessage",
+                "sendBody": true,
+                "bodyParameters": {
+                    "parameters": [
+                        {
+                            "name": "chat_id",
+                            "value": "={{ $env.TELEGRAM_CHAT_ID }}"
+                        },
+                        {
+                            "name": "text",
+                            "value": "=🧠 <b>ANÁLISIS IA DEL DÍA</b>\n━━━━━━━━━━━━━━━━━━━━\n\n{{ $json.text || $json.output }}\n\n🤖 <i>Análisis automático por Google Gemini</i>"
+                        },
+                        {
+                            "name": "parse_mode",
+                            "value": "HTML"
+                        }
+                    ]
+                },
+                "options": {}
+            },
+            "type": "n8n-nodes-base.httpRequest",
+            "typeVersion": 4.4,
+            "position": [
+                500,
+                500
+            ],
+            "id": "send-daily-ai-id",
+            "name": "Enviar Análisis IA"
+        }
+    ],
+    "connections": {
+        "Diario 8:00 AM": {
+            "main": [
+                [
+                    {
+                        "node": "Datos 24h",
+                        "type": "main",
+                        "index": 0
+                    },
+                    {
+                        "node": "Conteo Anomalías 24h",
+                        "type": "main",
+                        "index": 0
+                    }
+                ]
+            ]
+        },
+        "Datos 24h": {
+            "main": [
+                [
+                    {
+                        "node": "Unir Datos",
+                        "type": "main",
+                        "index": 0
+                    }
+                ]
+            ]
+        },
+        "Conteo Anomalías 24h": {
+            "main": [
+                [
+                    {
+                        "node": "Unir Datos",
+                        "type": "main",
+                        "index": 1
+                    }
+                ]
+            ]
+        },
+        "Unir Datos": {
+            "main": [
+                [
+                    {
+                        "node": "Formatear Reporte Diario",
+                        "type": "main",
+                        "index": 0
+                    }
+                ]
+            ]
+        },
+        "Formatear Reporte Diario": {
+            "main": [
+                [
+                    {
+                        "node": "Enviar Reporte Diario",
+                        "type": "main",
+                        "index": 0
+                    },
+                    {
+                        "node": "Análisis IA Diario",
+                        "type": "main",
+                        "index": 0
+                    }
+                ]
+            ]
+        },
+        "Gemini Diario": {
+            "ai_languageModel": [
+                [
+                    {
+                        "node": "Análisis IA Diario",
+                        "type": "ai_languageModel",
+                        "index": 0
+                    }
+                ]
+            ]
+        },
+        "Análisis IA Diario": {
+            "main": [
+                [
+                    {
+                        "node": "Enviar Análisis IA",
+                        "type": "main",
+                        "index": 0
+                    }
+                ]
+            ]
+        }
+    },
+    "active": false,
+    "settings": {
+        "executionOrder": "v1",
+        "timezone": "America/Lima"
+    },
+    "meta": {
+        "templateCredsSetupCompleted": true
+    },
+    "tags": []
+}

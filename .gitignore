@@ -1,24 +1,66 @@
-# Python
+# ============================================================
+#  EnergyCore v2 — .gitignore
+# ============================================================
+
+# ── Python ──────────────────────────────────────────────────
 __pycache__/
 *.py[cod]
 *$py.class
+*.pyo
+*.pyd
+.Python
+build/
+dist/
+*.egg-info/
+*.egg
+
+# ── Entornos virtuales ───────────────────────────────────────
 venv/
 .venv/
 env/
-.env
-*.log
+ENV/
 
-# Databases & Infrastructure
+# ── Variables de entorno (¡NUNCA subir al repo!) ─────────────
+.env
+.env.local
+.env.*.local
+
+# ── Logs ─────────────────────────────────────────────────────
+*.log
+logs/
+simulator.log
+
+# ── Datos persistentes de Docker (volúmenes) ─────────────────
 n8n/data/
 mosquitto/data/
 mosquitto/log/
+infra/mosquitto/data/
+infra/mosquitto/log/
 influxdb_data/
 postgres_data/
 
-# IDEs
+# ── IDEs y editores ──────────────────────────────────────────
 .vscode/
 .idea/
+*.swp
+*.swo
+*~
 
-# OS
+# ── Sistema Operativo ─────────────────────────────────────────
 .DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
 Thumbs.db
+desktop.ini
+
+# ── Agentes y herramientas de desarrollo local ───────────────
+.agents/
+skills-lock.json
+
+# ── Archivos temporales ───────────────────────────────────────
+*.tmp
+*.temp
+*.bak

@@ -4,7 +4,11 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Energy Dashboard Pro</title>
+    <title>⚡ Energy Monitor Pro | Industrial Control</title>
+    <!-- Google Fonts: Inter & JetBrains Mono -->
+    <link
+        href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&family=JetBrains+Mono:wght@400;700&display=swap"
+        rel="stylesheet">
     <!-- Tailwind CSS -->
     <script src="https://cdn.tailwindcss.com"></script>
     <!-- Tailwind Configuration -->
@@ -13,10 +17,17 @@
             darkMode: 'class',
             theme: {
                 extend: {
+                    fontFamily: {
+                        sans: ['Inter', 'sans-serif'],
+                        mono: ['JetBrains Mono', 'monospace'],
+                    },
                     colors: {
-                        slate: {
-                            850: '#141c2e',
-                            900: '#0f172a',
+                        industrial: {
+                            black: '#050505',
+                            dark: '#0a0a0a',
+                            gray: '#1a1a1a',
+                            steel: '#2a2a2a',
+                            light: '#a0a0a0',
                         },
                         neon: {
                             blue: '#00f3ff',
@@ -27,6 +38,13 @@
                     },
                     animation: {
                         'pulse-fast': 'pulse 1s cubic-bezier(0.4, 0, 0.6, 1) infinite',
+                        'scanline': 'scanline 8s linear infinite',
+                    },
+                    keyframes: {
+                        scanline: {
+                            '0%': { transform: 'translateY(-100%)' },
+                            '100%': { transform: 'translateY(100%)' }
+                        }
                     }
                 }
             }
@@ -36,180 +54,254 @@
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 
     <style>
-        /* Modern Scrollbar for Terminal */
+        /* Industrial Scrollbar */
         .terminal-scroll::-webkit-scrollbar {
-            width: 8px;
+            width: 4px;
         }
 
         .terminal-scroll::-webkit-scrollbar-track {
-            background: #0f172a;
+            background: #050505;
         }
 
         .terminal-scroll::-webkit-scrollbar-thumb {
-            background: #334155;
-            border-radius: 4px;
+            background: #2a2a2a;
+            border-radius: 0;
         }
 
         .terminal-scroll::-webkit-scrollbar-thumb:hover {
-            background: #475569;
+            background: #404040;
+        }
+
+        /* Machined Edges & Accents */
+        .industrial-card {
+            background: #0a0a0a;
+            border: 1px solid #1f1f1f;
+            position: relative;
+        }
+
+        .industrial-card::before {
+            content: '';
+            position: absolute;
+            top: 2px;
+            left: 2px;
+            right: 2px;
+            bottom: 2px;
+            border: 1px solid #141414;
+            pointer-events: none;
+        }
+
+        /* Screw-head decorative details */
+        .screw {
+            position: absolute;
+            width: 4px;
+            height: 4px;
+            background: #2a2a2a;
+            border-radius: 50%;
+            box-shadow: inset 1px 1px 1px #000;
         }
 
         [data-status="Critical"] {
-            box-shadow: 0 0 15px rgba(255, 0, 85, 0.5);
             border-color: #ff0055;
-            animation: pulse-fast 1.5s infinite;
+            box-shadow: inset 0 0 20px rgba(255, 0, 85, 0.1), 0 0 10px rgba(255, 0, 85, 0.2);
         }
 
         [data-status="Warning"] {
-            box-shadow: 0 0 15px rgba(255, 153, 0, 0.5);
             border-color: #ff9900;
+            box-shadow: inset 0 0 20px rgba(255, 153, 0, 0.1);
         }
 
         [data-status="Normal"] {
-            box-shadow: 0 0 15px rgba(0, 255, 102, 0.2);
             border-color: #00ff66;
+            box-shadow: inset 0 0 20px rgba(0, 255, 102, 0.05);
+        }
+
+        .scanlines {
+            position: relative;
+            overflow: hidden;
+        }
+
+        .scanlines::after {
+            content: "";
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(rgba(18, 16, 16, 0) 50%, rgba(0, 0, 0, 0.1) 50%), linear-gradient(90deg, rgba(255, 0, 0, 0.02), rgba(0, 255, 0, 0.01), rgba(0, 0, 255, 0.02));
+            background-size: 100% 2px, 3px 100%;
+            pointer-events: none;
         }
     </style>
 </head>
 
-<body class="bg-slate-900 text-slate-200 min-h-screen p-4 md:p-6 font-sans antialiased overflow-x-hidden">
+<body class="bg-industrial-black text-industrial-light min-h-screen p-4 md:p-6 font-sans antialiased overflow-x-hidden">
 
-    <div class="max-w-7xl mx-auto grid grid-cols-1 lg:grid-cols-4 gap-6">
+    <div class="max-w-[1600px] mx-auto grid grid-cols-1 lg:grid-cols-4 gap-4">
 
         <!-- Sidebar / Controls -->
-        <aside class="col-span-1 flex flex-col gap-6">
+        <aside class="col-span-1 flex flex-col gap-4">
             <!-- Header -->
-            <div class="bg-slate-800 rounded-2xl p-6 border border-slate-700 shadow-lg relative overflow-hidden">
-                <div class="absolute top-0 left-0 w-1 p-full h-full bg-neon-blue"></div>
-                <h1 class="text-2xl font-bold text-white tracking-tight flex items-center gap-2">
-                    <svg class="w-6 h-6 text-neon-blue" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <div class="industrial-card p-6 border-l-2 border-l-neon-blue shadow-2xl relative overflow-hidden group">
+                <div
+                    class="absolute top-0 right-0 w-24 h-24 bg-neon-blue/5 blur-3xl group-hover:bg-neon-blue/10 transition-all">
+                </div>
+                <div class="screw top-1 left-1"></div>
+                <div class="screw top-1 right-1"></div>
+                <div class="screw bottom-1 left-1"></div>
+                <div class="screw bottom-1 right-1"></div>
+
+                <h1 class="text-xl font-bold text-white tracking-widest flex items-center gap-3 uppercase italic">
+                    <svg class="w-7 h-7 text-neon-blue animate-pulse" fill="none" stroke="currentColor"
+                        viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
                             d="M13 10V3L4 14h7v7l9-11h-7z"></path>
                     </svg>
-                    EnergyDash
+                    EnergyCore <span class="text-neon-blue">v2</span>
                 </h1>
-                <p class="text-slate-400 text-sm mt-1">Simulación en Tiempo Real</p>
+                <p class="text-slate-500 font-mono text-[10px] mt-2 tracking-tighter uppercase">Industrial Monitoring
+                    System // Active</p>
             </div>
 
             <!-- Control Panel -->
-            <div class="bg-slate-800 rounded-2xl p-6 border border-slate-700 shadow-lg">
-                <h2 class="text-lg font-semibold text-white mb-5 flex items-center gap-2">
-                    <svg class="w-5 h-5 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                            d="M12 6V4m0 2a2 2 0 100 4m0-4a2 2 0 110 4m-6 8a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4m6 6v10m6-2a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4">
-                        </path>
-                    </svg>
-                    Panel de Control
+            <div class="industrial-card p-6 border-t border-white/5">
+                <div class="screw top-1 left-1"></div>
+                <div class="screw top-1 right-1"></div>
+
+                <h2 class="text-xs font-bold text-slate-400 mb-6 flex items-center gap-2 uppercase tracking-[0.2em]">
+                    <div class="w-1 h-3 bg-slate-600"></div>
+                    System Parameters
                 </h2>
 
-                <div class="space-y-5">
+                <div class="space-y-6">
                     <!-- Global Actions -->
-                    <div class="flex items-center justify-between pb-3 border-b border-slate-700">
-                        <span class="text-sm font-medium text-slate-400">Restablecer Todo</span>
+                    <div class="flex items-center justify-between pb-4 border-b border-white/5">
+                        <span class="text-[10px] font-bold text-slate-500 uppercase tracking-widest">Master Reset</span>
                         <button id="btn-reset-all"
-                            class="px-3 py-1 bg-slate-700 hover:bg-slate-600 outline-none text-xs text-slate-300 rounded transition-colors">Normal</button>
+                            class="px-4 py-1.5 border border-slate-700 hover:border-neon-blue hover:text-neon-blue bg-transparent text-[10px] font-mono text-slate-400 transition-all uppercase">
+                            EXECUTE_RESET
+                        </button>
                     </div>
 
                     <!-- Per Area List -->
-                    <div id="area-controls" class="space-y-4 max-h-[300px] overflow-y-auto terminal-scroll pr-2">
+                    <div id="area-controls" class="space-y-3 max-h-[400px] overflow-y-auto terminal-scroll pr-2">
                         <!-- JS injected selects -->
                     </div>
 
                     <!-- Interval -->
-                    <div>
-                        <label class="block text-sm font-medium text-slate-400 mb-1" for="sim-interval">
-                            Intervalo: <span id="interval-val" class="font-mono text-neon-blue">5s</span>
+                    <div class="pt-4 border-t border-white/5">
+                        <label class="block text-[10px] font-bold text-slate-500 mb-2 uppercase tracking-widest"
+                            for="sim-interval">
+                            Telemetry Frequency: <span id="interval-val" class="font-mono text-neon-blue">5s</span>
                         </label>
                         <input type="range" id="sim-interval" min="1" max="60" step="1" value="5"
-                            class="w-full h-2 bg-slate-700 rounded-lg appearance-none cursor-pointer accent-neon-blue">
+                            class="w-full h-1 bg-slate-800 rounded-none appearance-none cursor-pointer accent-neon-blue">
                     </div>
                 </div>
             </div>
 
             <!-- Connection Status -->
-            <div
-                class="bg-slate-800 rounded-xl p-4 border border-slate-700 shadow-lg flex items-center justify-between">
-                <span class="text-sm text-slate-400">WebSocket</span>
+            <div class="industrial-card p-4 border border-white/5 flex items-center justify-between">
+                <span class="text-[10px] font-bold text-slate-500 uppercase tracking-widest">Data Stream</span>
                 <span id="ws-status"
-                    class="px-2 py-1 bg-slate-700 text-yellow-400 text-xs rounded-full font-medium flex items-center gap-2">
-                    <span class="w-2 h-2 rounded-full bg-yellow-400 animate-pulse"></span> Refrescando
+                    class="px-3 py-1 bg-slate-900 border border-slate-800 text-yellow-400 text-[10px] font-mono flex items-center gap-2 uppercase">
+                    <span class="w-1.5 h-1.5 bg-yellow-400 animate-pulse"></span> Initializing
                 </span>
             </div>
         </aside>
 
         <!-- Main Content -->
-        <main class="col-span-1 lg:col-span-3 flex flex-col gap-6">
+        <main class="col-span-1 lg:col-span-3 flex flex-col gap-4">
 
             <!-- Metrics Cards -->
-            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <!-- Total kWh -->
-                <div
-                    class="bg-slate-800 rounded-2xl p-6 border border-slate-700 shadow-lg flex flex-col justify-center relative overflow-hidden">
-                    <div class="absolute right-0 top-0 opacity-10 translate-x-4 -translate-y-4">
-                        <svg class="w-32 h-32 text-neon-blue" fill="currentColor" viewBox="0 0 20 20">
-                            <path
-                                d="M11 3a1 1 0 100 2h2.586l-6.293 6.293a1 1 0 101.414 1.414L15 6.414V9a1 1 0 102 0V4a1 1 0 00-1-1h-5z">
-                            </path>
-                            <path
-                                d="M5 5a2 2 0 00-2 2v8a2 2 0 002 2h8a2 2 0 002-2v-3a1 1 0 10-2 0v3H5V7h3a1 1 0 000-2H5z">
-                            </path>
+                <div class="industrial-card p-8 border-b-2 border-b-neon-blue/30 overflow-hidden">
+                    <div class="screw top-1 left-1"></div>
+                    <div class="screw top-1 right-1"></div>
+                    <div class="absolute right-0 bottom-0 opacity-5 translate-x-1/4 translate-y-1/4">
+                        <svg class="w-48 h-48 text-neon-blue" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="0.5"
+                                d="M13 10V3L4 14h7v7l9-11h-7z"></path>
                         </svg>
                     </div>
-                    <span class="text-slate-400 text-sm font-medium mb-1">Total kWh Actual</span>
-                    <div class="flex items-baseline gap-2">
-                        <span id="metric-kwh" class="text-4xl font-bold text-white tracking-tight">0.00</span>
-                        <span class="text-neon-blue font-semibold">kWh</span>
+                    <span class="text-slate-500 text-[10px] font-bold uppercase tracking-[0.3em] mb-4 block">Load
+                        Aggregation</span>
+                    <div class="flex items-baseline gap-4">
+                        <span id="metric-kwh"
+                            class="text-6xl font-mono font-bold text-white tabular-nums tracking-tighter">0.00</span>
+                        <span class="text-neon-blue font-mono text-sm font-bold">KWH_NET</span>
                     </div>
-                    <span class="text-xs text-slate-500 mt-2">Suma de todas las áreas activas</span>
+                    <div class="mt-4 flex gap-2">
+                        <div class="h-1 flex-1 bg-neon-blue/20"></div>
+                        <div class="h-1 flex-1 bg-neon-blue/10"></div>
+                        <div class="h-1 flex-1 bg-neon-blue/5"></div>
+                    </div>
                 </div>
 
                 <!-- System Status -->
                 <div id="status-card"
-                    class="bg-slate-800 rounded-2xl p-6 border border-slate-700 transition-all duration-300 shadow-lg flex flex-col justify-center relative"
+                    class="industrial-card p-8 border hover:bg-white/5 transition-all duration-500 flex flex-col justify-center"
                     data-status="Normal">
-                    <span class="text-slate-400 text-sm font-medium mb-1">Estado del Sistema</span>
-                    <div class="flex items-center gap-3">
+                    <div class="screw top-1 left-1"></div>
+                    <div class="screw top-1 right-1"></div>
+                    <span class="text-slate-500 text-[10px] font-bold uppercase tracking-[0.3em] mb-4 block">System
+                        Integrity</span>
+                    <div class="flex items-center gap-4">
                         <span id="metric-status"
-                            class="text-2xl font-bold text-neon-green tracking-tight uppercase">NORMAL</span>
+                            class="text-4xl font-mono font-bold text-neon-green tracking-tighter uppercase">NOMINAL</span>
                     </div>
-                    <span id="metric-status-detail" class="text-xs text-slate-400 mt-2 font-mono">Simulación
-                        estable</span>
+                    <p id="metric-status-detail"
+                        class="text-[10px] text-slate-500 mt-4 font-mono uppercase tracking-[0.1em]">All logic gates
+                        stable // No drift detected</p>
                 </div>
             </div>
 
             <!-- Real-time Chart -->
-            <div class="bg-slate-800 rounded-2xl p-6 border border-slate-700 shadow-lg flex-1 min-h-[350px]">
-                <div class="flex justify-between items-center mb-4">
-                    <h2 class="text-lg font-semibold text-white truncate px-2" id="chart-title">Consumo en Tiempo Real
+            <div class="industrial-card p-8 min-h-[450px] flex flex-col">
+                <div class="screw top-1 left-1"></div>
+                <div class="screw top-1 right-1"></div>
+                <div class="flex justify-between items-center mb-8">
+                    <h2 class="text-xs font-bold text-slate-400 uppercase tracking-[0.2em] flex items-center gap-3"
+                        id="chart-title">
+                        <span class="w-1 h-3 bg-neon-blue"></span>
+                        Power Consumption Stream
                     </h2>
-                    <span class="text-xs text-slate-400 bg-slate-700 px-2 py-1 rounded">Live</span>
+                    <div class="flex items-center gap-4">
+                        <span class="text-[10px] font-mono text-slate-500 uppercase">Buffer: 30 Points</span>
+                        <span
+                            class="flex items-center gap-1.5 text-neon-blue text-[10px] font-bold bg-neon-blue/10 px-3 py-1 border border-neon-blue/30 uppercase">
+                            <span class="w-1.5 h-1.5 bg-neon-blue rounded-full animate-pulse"></span> Live
+                        </span>
+                    </div>
                 </div>
-                <div class="relative h-[300px] w-full">
+                <div class="relative flex-1 w-full bg-black/40 border border-white/5">
                     <canvas id="consumptionChart"></canvas>
                 </div>
             </div>
 
-            Virtual Console
-            <div class="bg-[#0a0a0a] rounded-2xl border border-slate-700 shadow-2xl overflow-hidden flex flex-col h-64">
-                <div class="bg-slate-800 px-4 py-2 border-b border-slate-700 flex justify-between items-center">
-                    <div class="flex items-center gap-2">
-                        <svg class="w-4 h-4 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                d="M8 9l3 3-3 3m5 0h3M5 20h14a2 2 0 002-2V6a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z">
-                            </path>
-                        </svg>
-                        <span class="text-xs font-mono text-slate-300">sysadmin@energy-core:~$ live-log</span>
+            <!-- Virtual Console -->
+            <div
+                class="industrial-card bg-black border-t-2 border-slate-800 shadow-2xl overflow-hidden flex flex-col h-72">
+                <div class="screw top-1 left-1"></div>
+                <div class="screw top-1 right-1"></div>
+                <div
+                    class="bg-industrial-dark px-6 py-3 border-b border-white/5 flex justify-between items-center scanlines">
+                    <div class="flex items-center gap-3">
+                        <div class="w-2 h-2 bg-neon-blue shadow-[0_0_8px_rgba(0,243,255,0.5)]"></div>
+                        <span class="text-[10px] font-mono text-neon-blue uppercase tracking-widest font-bold">Log
+                            Protocol 0xAF43</span>
                     </div>
-                    <div class="flex gap-1.5">
-                        <div class="w-3 h-3 rounded-full bg-slate-600"></div>
-                        <div class="w-3 h-3 rounded-full bg-slate-600"></div>
-                        <div class="w-3 h-3 rounded-full bg-slate-600"></div>
+                    <div class="flex gap-2 font-mono text-[10px] text-slate-600">
+                        <span>CPU: 4%</span>
+                        <span class="text-slate-800">|</span>
+                        <span>MEM: 128MB</span>
                     </div>
                 </div>
                 <div id="virtual-console"
-                    class="p-4 font-mono text-sm overflow-y-auto terminal-scroll flex-1 space-y-1">
+                    class="p-6 font-mono text-xs overflow-y-auto terminal-scroll flex-1 space-y-1 bg-[radial-gradient(circle_at_center,_transparent_0%,_rgba(0,0,0,0.4)_100%)]">
                     <!-- Logs injected here -->
-                    <p class="text-slate-500">Iniciando conexión con el servidor...</p>
+                    <p class="text-slate-700 uppercase tracking-tighter">Establishing secure handshake with
+                        energy-core.local...</p>
                 </div>
             </div>
 
@@ -251,18 +343,27 @@
                 animation: { duration: 400, easing: 'linear' },
                 interaction: { mode: 'index', intersect: false },
                 plugins: {
-                    legend: { labels: { color: '#cbd5e1', usePointStyle: true, boxWidth: 6 } }
+                    legend: {
+                        position: 'bottom',
+                        labels: {
+                            color: '#64748b',
+                            usePointStyle: true,
+                            boxWidth: 5,
+                            font: { size: 9, family: 'JetBrains Mono' },
+                            padding: 15
+                        }
+                    }
                 },
                 scales: {
                     x: {
-                        grid: { color: '#334155', drawBorder: false },
-                        ticks: { color: '#94a3b8', maxTicksLimit: 10 }
+                        grid: { color: 'rgba(255,255,255,0.03)', drawBorder: false },
+                        ticks: { color: '#4b5563', font: { size: 8, family: 'JetBrains Mono' }, maxTicksLimit: 12 }
                     },
                     y: {
                         beginAtZero: true,
-                        grid: { color: '#334155', drawBorder: false },
-                        ticks: { color: '#94a3b8' },
-                        title: { display: true, text: 'Consumo (kWh)', color: '#64748b' }
+                        grid: { color: 'rgba(255,255,255,0.03)', drawBorder: false },
+                        ticks: { color: '#4b5563', font: { size: 9, family: 'JetBrains Mono' } },
+                        border: { display: false }
                     }
                 }
             }
@@ -309,14 +410,15 @@
                 else if (currentMode !== 'normal') dotColor = 'bg-neon-orange animate-pulse';
 
                 return `
-                    <div class="bg-slate-900 p-3 rounded-lg border border-slate-700">
+                    <div class="bg-industrial-dark p-3 border border-white/5 relative group">
+                        <div class="screw top-0.5 left-0.5 opacity-30"></div>
                         <div class="flex items-center justify-between mb-2">
-                            <span class="text-sm font-medium text-slate-300 flex items-center gap-2">
-                                <span class="w-2 h-2 rounded-full ${dotColor}"></span>
-                                ${area.replace('_', ' ').toUpperCase()}
+                            <span class="text-[10px] font-bold text-slate-500 flex items-center gap-2 uppercase tracking-widest">
+                                <span class="w-1.5 h-1.5 ${dotColor}"></span>
+                                ${area.replace('_', ' ')}
                             </span>
                         </div>
-                        <select data-area="${area}" class="area-mode-select w-full bg-slate-800 border ${currentMode !== 'normal' ? 'border-neon-orange text-neon-orange' : 'border-slate-600 text-slate-400'} rounded focus:ring-1 focus:ring-neon-blue outline-none p-1.5 text-xs transition-colors">
+                        <select data-area="${area}" class="area-mode-select w-full bg-industrial-black border ${currentMode !== 'normal' ? 'border-neon-orange text-neon-orange' : 'border-slate-800 text-slate-500'} font-mono outline-none p-1.5 text-[10px] uppercase transition-all focus:border-neon-blue">
                             ${modeOptions}
                         </select>
                     </div>
@@ -438,19 +540,19 @@
 
                     if (anomalousAreas.length === 0) {
                         statusCard.setAttribute("data-status", "Normal");
-                        metricStatus.textContent = "ESTABLE";
-                        metricStatus.className = "text-2xl font-bold text-neon-green tracking-tight uppercase";
-                        metricStatusDetail.textContent = "Todas las áreas operan normal";
+                        metricStatus.textContent = "NOMINAL";
+                        metricStatus.className = "text-4xl font-mono font-bold text-neon-green tracking-tighter uppercase";
+                        metricStatusDetail.textContent = "ALL LOGIC GATES STABLE // NO DRIFT DETECTED";
                     } else if (criticalAreas.length > 0) {
                         statusCard.setAttribute("data-status", "Critical");
-                        metricStatus.textContent = "FALLO ACTIVO";
-                        metricStatus.className = "text-2xl font-bold text-neon-red tracking-tight uppercase animate-pulse";
-                        metricStatusDetail.textContent = `${criticalAreas.length} área(s) con pérdida de sensor`;
+                        metricStatus.textContent = "SYSTEM_FAILURE";
+                        metricStatus.className = "text-4xl font-mono font-bold text-neon-red tracking-tighter uppercase animate-pulse";
+                        metricStatusDetail.textContent = `CRITICAL: ${criticalAreas.length} SENSOR_FAULT DETECTED`;
                     } else {
                         statusCard.setAttribute("data-status", "Warning");
-                        metricStatus.textContent = "ANOMALÍAS";
-                        metricStatus.className = "text-2xl font-bold text-neon-orange tracking-tight uppercase animate-pulse";
-                        metricStatusDetail.textContent = `${anomalousAreas.length} área(s) reportan desviación`;
+                        metricStatus.textContent = "ANOMALY_DETECTED";
+                        metricStatus.className = "text-4xl font-mono font-bold text-neon-orange tracking-tighter uppercase animate-pulse";
+                        metricStatusDetail.textContent = `WARNING: ${anomalousAreas.length} AREA_DEVIATIONS RECORDED`;
                     }
 
                     // For the chart: Only keep the top 5 Datasets active based on last value

@@ -11,6 +11,7 @@ from dataclasses import dataclass, field, asdict
 from datetime import datetime, timezone
 from enum import Enum
 from typing import Dict, Final, List, Optional
+from contextlib import asynccontextmanager
 
 from fastapi import FastAPI, WebSocket, WebSocketDisconnect
 from fastapi.responses import FileResponse
@@ -334,21 +335,21 @@ def simulation_loop(loop: asyncio.AbstractEventLoop):
 # ──────────────────────────────────────────────
 # FastAPI App
 # ──────────────────────────────────────────────
-app = FastAPI(title="Energy Monitor Dashboard Pro Web")
-
-@app.on_event("startup")
-async def startup_event():
-    # Start the broadcast worker
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    # Startup logic
     asyncio.create_task(broadcast_worker())
     
-    # Start the simulation thread
     loop = asyncio.get_running_loop()
     thread = threading.Thread(target=simulation_loop, args=(loop,), daemon=True)
     thread.start()
-
-@app.on_event("shutdown")
-def shutdown_event():
+    
+    yield
+    
+    # Shutdown logic
     state.running = False
+
+app = FastAPI(title="Energy Monitor Dashboard Pro Web", lifespan=lifespan)
 
 @app.get("/")
 def get_index():
@@ -394,5 +395,4 @@ async def websocket_endpoint(websocket: WebSocket):
 
 if __name__ == "__main__":
     import uvicorn
-    # run inside scripts: uvicorn main:app --reload
     uvicorn.run(app, host="0.0.0.0", port=8000)

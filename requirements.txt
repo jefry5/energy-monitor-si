@@ -1,6 +1,7 @@
 influxdb-client
 python-dotenv
 paho-mqtt
-python-telegram-bot
 psycopg2-binary
 google-generativeai
+fastapi
+uvicorn
