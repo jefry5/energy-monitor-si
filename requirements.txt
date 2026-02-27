@@ -4,4 +4,4 @@ paho-mqtt
 psycopg2-binary
 google-generativeai
 fastapi
-uvicorn
+uvicorn[standard]

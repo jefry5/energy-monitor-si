@@ -1,5 +1,12 @@
+# ============================================================
+#  EnergyCore v2 — Docker Compose
+#  Un solo comando para levantar todo el sistema:
+#    docker-compose up -d
+# ============================================================
+
 services:
-  # InfluxDB: Base de datos de series de tiempo
+
+  # ── InfluxDB: Series de tiempo ────────────────────────────
   influxdb:
     image: influxdb:2.7
     container_name: influxdb
@@ -15,10 +22,15 @@ services:
       - DOCKER_INFLUXDB_INIT_ADMIN_TOKEN=${INFLUXDB_TOKEN}
     volumes:
       - influxdb_data:/var/lib/influxdb2
+    healthcheck:
+      test: ["CMD", "influx", "ping"]
+      interval: 15s
+      timeout: 5s
+      retries: 5
     networks:
       - energia-net
 
-  # PostgreSQL: Base de datos relacional
+  # ── PostgreSQL: Base de datos relacional ──────────────────
   postgres:
     image: postgres:15
     container_name: postgres
@@ -32,10 +44,15 @@ services:
     volumes:
       - postgres_data:/var/lib/postgresql/data
       - ./src/db/init_postgres.sql:/docker-entrypoint-initdb.d/init.sql
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER} -d ${POSTGRES_DB}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
     networks:
       - energia-net
 
-  # Mosquitto: Broker MQTT
+  # ── Mosquitto: Broker MQTT ────────────────────────────────
   mosquitto:
     image: eclipse-mosquitto:2
     container_name: mosquitto
@@ -49,10 +66,99 @@ services:
     networks:
       - energia-net
 
+  # ── Cloudflare Tunnel: HTTPS público para n8n ─────────────
+  cloudflared:
+    build:
+      context: ./infra/cloudflared
+      dockerfile: Dockerfile
+    container_name: cloudflared
+    restart: unless-stopped
+    entrypoint: ["/bin/sh", "/start-tunnel.sh"]
+    volumes:
+      - ./infra/cloudflared/start-tunnel.sh:/start-tunnel.sh:ro
+      - tunnel_url:/shared
+    healthcheck:
+      test: ["CMD", "sh", "-c", "test -s /shared/webhook_url.txt"]
+      interval: 5s
+      timeout: 3s
+      retries: 30
+      start_period: 5s
+    networks:
+      - energia-net
+
+  # ── n8n: Motor de automatización ─────────────────────────
+  # Usa tini + nuestro script wrapper que lee la URL HTTPS del
+  # túnel Cloudflare y la exporta como WEBHOOK_URL antes de
+  # iniciar n8n.
+  n8n:
+    image: docker.n8n.io/n8nio/n8n:latest
+    container_name: n8n
+    restart: unless-stopped
+    ports:
+      - "5678:5678"
+    entrypoint: ["tini", "--", "/bin/sh", "/custom-entrypoint.sh"]
+    environment:
+      # Autenticación
+      - N8N_BASIC_AUTH_ACTIVE=${N8N_BASIC_AUTH_ACTIVE:-true}
+      - N8N_BASIC_AUTH_USER=${N8N_BASIC_AUTH_USER:-admin}
+      - N8N_BASIC_AUTH_PASSWORD=${N8N_BASIC_AUTH_PASSWORD:-admin123}
+      # Timezone
+      - GENERIC_TIMEZONE=${GENERIC_TIMEZONE:-America/Lima}
+      # Permitir acceso a variables de entorno desde nodos Code
+      - N8N_BLOCK_ENV_ACCESS_IN_NODE=false
+      # ── Variables disponibles para los workflows de n8n ──
+      - TELEGRAM_TOKEN=${TELEGRAM_TOKEN}
+      - TELEGRAM_CHAT_ID=${TELEGRAM_CHAT_ID}
+      - GEMINI_API_KEY=${GEMINI_API_KEY}
+      # InfluxDB apunta al contenedor
+      - INFLUXDB_URL=http://influxdb:8086
+      - INFLUXDB_TOKEN=${INFLUXDB_TOKEN}
+      - INFLUXDB_ORG=${INFLUXDB_ORG}
+      - INFLUXDB_BUCKET=${INFLUXDB_BUCKET}
+      # MQTT apunta al contenedor
+      - MQTT_BROKER=mosquitto
+      - MQTT_PORT=1883
+    volumes:
+      - n8n_data:/home/node/.n8n
+      - ./infra/n8n/start-n8n.sh:/custom-entrypoint.sh:ro
+      - tunnel_url:/shared:ro
+    depends_on:
+      postgres:
+        condition: service_healthy
+      cloudflared:
+        condition: service_healthy
+    networks:
+      - energia-net
+
+  # ── Dashboard Web: FastAPI + Simulador de sensores ────────
+  dashboard:
+    build:
+      context: .
+      dockerfile: ./infra/python/Dockerfile
+    container_name: dashboard
+    restart: unless-stopped
+    ports:
+      - "8000:8000"
+    command: python src/dashboard/main.py
+    environment:
+      - MQTT_BROKER=mosquitto
+      - MQTT_PORT=${MQTT_PORT:-1883}
+      - TOPIC_PREFIX=${TOPIC_PREFIX:-edificio}
+      - BUILDING_ID=${BUILDING_ID:-edificio_principal}
+      - SIM_INTERVAL=${SIM_INTERVAL:-2.0}
+    depends_on:
+      - mosquitto
+    networks:
+      - energia-net
+
+# ── Volúmenes persistentes ────────────────────────────────────
 volumes:
   influxdb_data:
   postgres_data:
+  n8n_data:
+  tunnel_url:
 
+# ── Red interna ───────────────────────────────────────────────
 networks:
   energia-net:
     driver: bridge
