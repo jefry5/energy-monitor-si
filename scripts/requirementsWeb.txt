@@ -1,0 +1,4 @@
+pip install fastapi uvicorn websockets pydantic paho-mqtt python-dotenv
+cd scripts
+python -m uvicorn main:app --reload
+Abre http://127.0.0.1:8000
