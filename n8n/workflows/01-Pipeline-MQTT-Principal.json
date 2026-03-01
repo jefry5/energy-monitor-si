@@ -828,7 +828,7 @@
     },
     {
       "parameters": {
-        "jsCode": "const ALPHA  = 0.2;\nconst WARMUP = Number($env?.WARMUP_READINGS ?? 50);\n\nconst parsedData   = $('Parsear MQTT').first().json;\nconst area         = parsedData.area;\nconst kwh          = parsedData.kwh;\nconst timestamp    = parsedData.timestamp;\nconst ema_anterior = Number($input.first().json.ema_actual);\nconst contador_ant = Number($input.first().json.contador);\nconst es_primera   = contador_ant === 0;\n\nconst ema_nuevo    = es_primera ? kwh : ALPHA * kwh + (1 - ALPHA) * ema_anterior;\nconst contador_nuevo = contador_ant + 1;\nconst denom        = Math.abs(ema_nuevo) < 1e-9 ? 1e-9 : ema_nuevo;\nconst desviacion   = ((kwh - ema_nuevo) / denom) * 100;\nconst enCalentamiento = contador_nuevo <= WARMUP;\n\nlet severidad = 'Normal';\nif (!enCalentamiento && !es_primera) {\n  if      (desviacion > 50) severidad = 'Critico';\n  else if (desviacion > 20) severidad = 'Advertencia';\n}\n\nreturn [{ json: { area, kwh: Number(kwh.toFixed(4)), ema: Number(ema_nuevo.toFixed(4)), desviacion: Number(desviacion.toFixed(2)), severidad, enCalentamiento, es_primera_lectura: es_primera, lectura_num: contador_nuevo, timestamp, modo: parsedData.modo ?? 'normal' } }];"
+        "jsCode": "const ALPHA  = 0.2;\nconst WARMUP = Number($env?.WARMUP_READINGS ?? 50);\n\nconst parsedData   = $('Parsear MQTT').first().json;\nconst area         = parsedData.area;\nconst kwh          = parsedData.kwh;\nconst timestamp    = parsedData.timestamp;\nconst modo         = (parsedData.modo ?? 'normal').toLowerCase();\nconst ema_anterior = Number($input.first().json.ema_actual);\nconst contador_ant = Number($input.first().json.contador);\nconst es_primera   = contador_ant === 0;\n\n// Detect if reading comes from an anomaly simulation mode\nconst esAnomalia = modo !== 'normal' && modo !== 'ok' && modo !== 'relay_off';\nconst noActualizarEma = esAnomalia || modo === 'relay_off';\n\n// Only update EMA with normal readings to keep baseline stable\nconst ema_nuevo = es_primera ? kwh : (noActualizarEma ? ema_anterior : ALPHA * kwh + (1 - ALPHA) * ema_anterior);\nconst contador_nuevo = contador_ant + 1;\n\n// For NORMAL areas: compare against ema_nuevo (original behavior)\n// For ANOMALY areas: compare against ema_anterior (stable baseline)\nconst base_comparacion = es_primera ? kwh : (noActualizarEma ? ema_anterior : ema_nuevo);\nconst denom = Math.abs(base_comparacion) < 1e-9 ? 1e-9 : base_comparacion;\nconst desviacion = ((kwh - base_comparacion) / denom) * 100;\nconst enCalentamiento = contador_nuevo <= WARMUP;\n\nlet severidad = 'Normal';\nif (!enCalentamiento && !es_primera) {\n  if      (desviacion > 80) severidad = 'Critico';\n  else if (desviacion > 35) severidad = 'Advertencia';\n  // If simulator is in anomaly mode, force at least Advertencia\n  if (esAnomalia && severidad === 'Normal') severidad = 'Advertencia';\n}\n\nreturn [{ json: { area, kwh: Number(kwh.toFixed(4)), ema: Number(ema_nuevo.toFixed(4)), desviacion: Number(desviacion.toFixed(2)), severidad, enCalentamiento, es_primera_lectura: es_primera, lectura_num: contador_nuevo, timestamp, modo } }];"
       },
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
@@ -842,7 +842,7 @@
     {
       "parameters": {
         "operation": "executeQuery",
-        "query": "INSERT INTO ema_estado (area, ema_actual, contador, ultima_vez)\nVALUES ('{{ $json.area }}', {{ $json.ema }}, {{ $json.lectura_num }}, NOW())\nON CONFLICT (area)\nDO UPDATE SET ema_actual = EXCLUDED.ema_actual, contador = EXCLUDED.contador, ultima_vez = NOW();",
+        "query": "INSERT INTO ema_estado (area, ema_actual, contador, ultima_vez)\nVALUES ('{{ $json.area }}', {{ $json.ema }}, {{ $json.lectura_num }}, NOW())\nON CONFLICT (area)\nDO UPDATE SET\n  ema_actual = CASE WHEN '{{ $json.modo }}' IN ('normal', 'ok') THEN EXCLUDED.ema_actual ELSE ema_estado.ema_actual END,\n  contador = CASE WHEN '{{ $json.modo }}' IN ('normal', 'ok') THEN EXCLUDED.contador ELSE ema_estado.contador END,\n  ultima_vez = NOW();",
         "options": {}
       },
       "type": "n8n-nodes-base.postgres",
@@ -895,7 +895,7 @@
                 "conditions": [
                   {
                     "id": "sc1",
-                    "leftValue": "={{ $json.desviacion > 50 }}",
+                    "leftValue": "={{ $json.desviacion > 80 }}",
                     "rightValue": "={{ true }}",
                     "operator": {
                       "type": "boolean",
@@ -919,7 +919,7 @@
                 "conditions": [
                   {
                     "id": "sc2",
-                    "leftValue": "={{ $json.desviacion > 20 && $json.desviacion <= 50 }}",
+                    "leftValue": "={{ $json.desviacion > 35 && $json.desviacion <= 80 }}",
                     "rightValue": "={{ true }}",
                     "operator": {
                       "type": "boolean",
@@ -943,7 +943,7 @@
                 "conditions": [
                   {
                     "id": "sc3",
-                    "leftValue": "={{ $json.enCalentamiento === true || $json.desviacion <= 20 }}",
+                    "leftValue": "={{ $json.enCalentamiento === true || $json.desviacion <= 35 }}",
                     "rightValue": "={{true}}",
                     "operator": {
                       "type": "boolean",
@@ -1018,7 +1018,7 @@
     {
       "parameters": {
         "promptType": "define",
-        "text": "=Eres un experto en eficiencia energética de edificios universitarios.\nSe detectó una anomalía de consumo eléctrico:\n- Área: {{ $json.area }}\n- Consumo Actual: {{ $json.kwh }} kWh\n- Consumo Esperado (EMA): {{ $json.ema }} kWh\n- Desviación: {{ $json.desviacion }}%\n- Severidad: {{ $json.severidad }}\n\nResponde ÚNICAMENTE con un objeto JSON (sin markdown) con estas llaves:\n{\n  \"causa\": \"explicación breve de la causa\",\n  \"accion\": \"acción inmediata para mantenimiento\",\n  \"prioridad\": \"Alta|Media|Baja\",\n  \"diagnostico_ext\": \"resumen de 1-2 líneas\"\n}",
+        "text": "=Eres un experto en eficiencia energética de edificios universitarios.\nSe detectó una anomalía de consumo eléctrico:\n- Área: {{ $('Switch Severidad').item.json.area }}\n- Consumo Actual: {{ $('Switch Severidad').item.json.kwh }} kWh\n- Consumo Esperado (EMA): {{ $('Switch Severidad').item.json.ema }} kWh\n- Desviación: {{ $('Switch Severidad').item.json.desviacion }}%\n- Severidad: {{ $('Switch Severidad').item.json.severidad }}\n\nResponde ÚNICAMENTE con un objeto JSON (sin markdown) con estas llaves:\n{\n  \"causa\": \"explicación breve de la causa\",\n  \"accion\": \"acción inmediata para mantenimiento\",\n  \"prioridad\": \"Alta|Media|Baja\",\n  \"diagnostico_ext\": \"resumen de 1-2 líneas\"\n}",
         "messages": {
           "messageValues": [
             {
@@ -1035,7 +1035,9 @@
         -200
       ],
       "id": "anomaly-llm-id",
-      "name": "LLM Diagnóstico Anomalía"
+      "name": "LLM Diagnóstico Anomalía",
+      "onError": "continueRegularOutput",
+      "alwaysOutputData": true
     },
     {
       "parameters": {
@@ -1061,7 +1063,7 @@
         "operation": "executeQuery",
         "query": "INSERT INTO anomalias (timestamp, area, dispositivo, severidad, valor_kwh, ema_kwh, desviacion, recomendacion)\nVALUES (NOW(), $1, $2, $3, $4, $5, $6, $7);",
         "options": {
-          "queryReplacement": "={{ [ \n  $(\"Switch Severidad\").item.json.area, \n  $(\"Switch Severidad\").item.json.area.toLowerCase().includes('hvac') ? 'HVAC' : ($(\"Switch Severidad\").item.json.area.toLowerCase().includes('luz') ? 'Iluminación' : 'General'), \n  $(\"Switch Severidad\").item.json.severidad, \n  $(\"Switch Severidad\").item.json.kwh, \n  $(\"Switch Severidad\").item.json.ema, \n  $(\"Switch Severidad\").item.json.desviacion, \n  $json.output || $json.text || JSON.stringify($json)\n] }}"
+          "queryReplacement": "={{ [ \n  $('Switch Severidad').item.json.area, \n  $('Switch Severidad').item.json.area.toLowerCase().includes('hvac') ? 'HVAC' : ($('Switch Severidad').item.json.area.toLowerCase().includes('luz') ? 'Iluminación' : 'General'), \n  $('Switch Severidad').item.json.severidad, \n  $('Switch Severidad').item.json.kwh, \n  $('Switch Severidad').item.json.ema, \n  $('Switch Severidad').item.json.desviacion, \n  ($json.output || $json.text || 'Diagnóstico IA no disponible (rate limit). Verificar consumo manualmente.')\n] }}"
         }
       },
       "type": "n8n-nodes-base.postgres",
@@ -1096,7 +1098,7 @@
             },
             {
               "name": "text",
-              "value": "=={{ (() => {\n    const tz = 'America/Lima';\n    const ts = $('Switch Severidad').item.json.timestamp ?? new Date().toISOString();\n    const fecha = new Date(ts).toLocaleString('es-ES', { timeZone: tz });\n    const area = $('Switch Severidad').item.json.area ?? 'N/D';\n    const sev  = ($('Switch Severidad').item.json.severidad ?? 'N/D').toString();\n    const kwh  = $('Switch Severidad').item.json.kwh ?? 'N/D';\n    const ema  = $('Switch Severidad').item.json.ema ?? 'N/D';\n    const des  = $('Switch Severidad').item.json.desviacion ?? 'N/D';\n    let ai;\n    try { ai = JSON.parse($json.text.replace(/```json/g, '').replace(/```/g, '')); }\n    catch (e) { ai = { causa: $json.text, accion: 'Revisar manualmente', prioridad: 'Alta' }; }\n    const sevEmoji = sev.toLowerCase().includes('crit') ? '🔴' : '🟠';\n    const prEmoji  = (ai.prioridad||'').toLowerCase().includes('alta') ? '🔥' : '⚠️';\n    return (\n`${sevEmoji} <b>ALERTA ENERGÉTICA: ${area}</b>\\n` +\n`━━━━━━━━━━━━━━━━━━━━\\n` +\n`🕒 <b>Fecha:</b> ${fecha}\\n` +\n`🏷️ <b>Severidad:</b> ${sev}\\n\\n` +\n`<b>📊 Métricas</b>\\n` +\n`⚡ Actual: <b>${kwh} kWh</b>\\n` +\n`📈 EMA: ${ema} kWh\\n` +\n`📉 Desviación: <b>${des}%</b>\\n\\n` +\n`<b>🧠 Diagnóstico IA</b>\\n` +\n`🧩 Causa: ${ai.causa}\\n` +\n`🛠️ Acción: ${ai.accion}\\n` +\n`${prEmoji} Prioridad: <b>${ai.prioridad}</b>\\n\\n` +\n`🤖 <i>Sistema de Monitoreo Inteligente v2</i>`\n    );\n  })() }}"
+              "value": "={{ (() => {\n    const tz = 'America/Lima';\n    const ts = $('Switch Severidad').item.json.timestamp ?? new Date().toISOString();\n    const fecha = new Date(ts).toLocaleString('es-ES', { timeZone: tz });\n    const area = $('Switch Severidad').item.json.area ?? 'N/D';\n    const sev  = ($('Switch Severidad').item.json.severidad ?? 'N/D').toString();\n    const kwh  = $('Switch Severidad').item.json.kwh ?? 'N/D';\n    const ema  = $('Switch Severidad').item.json.ema ?? 'N/D';\n    const des  = $('Switch Severidad').item.json.desviacion ?? 'N/D';\n    let ai;\n    try { const raw = $json.text || $json.output || ''; ai = JSON.parse(raw.replace(/```json/g, '').replace(/```/g, '')); }\n    catch (e) { ai = { causa: 'Diagnóstico IA no disponible', accion: 'Revisar manualmente', prioridad: 'Alta', diagnostico_ext: 'Se superó el límite de consultas al modelo. Anomalía registrada.' }; }\n    const sevEmoji = sev.toLowerCase().includes('crit') ? '🔴' : '🟠';\n    const prEmoji  = (ai.prioridad||'').toLowerCase().includes('alta') ? '🔥' : '⚠️';\n    return (\n`${sevEmoji} <b>ALERTA ENERGÉTICA: ${area}</b>\\n` +\n`━━━━━━━━━━━━━━━━━━━━\\n` +\n`🕒 <b>Fecha:</b> ${fecha}\\n` +\n`🏷️ <b>Severidad:</b> ${sev}\\n\\n` +\n`<b>📊 Métricas</b>\\n` +\n`⚡ Actual: <b>${kwh} kWh</b>\\n` +\n`📈 EMA: ${ema} kWh\\n` +\n`📉 Desviación: <b>${des}%</b>\\n\\n` +\n`<b>🧠 Diagnóstico IA</b>\\n` +\n`🧩 Causa: ${ai.causa}\\n` +\n`🛠️ Acción: ${ai.accion}\\n` +\n`${prEmoji} Prioridad: <b>${ai.prioridad}</b>\\n\\n` +\n`🤖 <i>Sistema de Monitoreo Inteligente v2</i>`\n    );\n  })() }}"
             },
             {
               "name": "reply_markup",
@@ -1135,7 +1137,7 @@
     },
     {
       "parameters": {
-        "jsCode": "// Evaluar si la anomalía requiere corte automático de emergencia\nconst item = $('Switch Severidad').item.json;\nconst sev = (item.severidad || '').toString().toLowerCase();\nconst desviacion = Number(item.desviacion) || 0;\nconst area = item.area || '';\n\n// Reglas de auto-corte:\n// 1. Severidad Crítica con desviación > 80%\n// 2. Área sensible (sala_servidores queda excluida por seguridad)\nconst areasProtegidas = ['sala_servidores']; // Nunca cortar automáticamente\nconst requiereCorte = sev.includes('crit') && desviacion > 80 && !areasProtegidas.includes(area);\n\nreturn [{ json: { ...item, requiere_corte: requiereCorte, motivo: requiereCorte ? `Auto-corte: ${desviacion}% desviación` : 'Solo alerta' } }];"
+        "jsCode": "// Evaluar si la anomalía requiere corte automático de emergencia\nconst item = $('Switch Severidad').item.json;\nconst sev = (item.severidad || '').toString().toLowerCase();\nconst desviacion = Number(item.desviacion) || 0;\nconst area = item.area || '';\nconst modo = (item.modo || 'normal').toLowerCase();\n\n// No auto-cortar si es una simulación de anomalía (modo explícito del simulador)\nconst esSimulacion = modo !== 'normal' && modo !== 'ok' && modo !== 'relay_off';\n\n// Reglas de auto-corte:\n// 1. Severidad Crítica con desviación > 150% (umbral alto)\n// 2. NO es simulación de anomalía\n// 3. Área sensible (sala_servidores queda excluida por seguridad)\nconst areasProtegidas = ['sala_servidores'];\nconst requiereCorte = !esSimulacion && sev.includes('crit') && desviacion > 150 && !areasProtegidas.includes(area);\n\nreturn [{ json: { ...item, requiere_corte: requiereCorte, motivo: requiereCorte ? `Auto-corte: ${desviacion}% desviación` : 'Solo alerta' } }];"
       },
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
@@ -1382,6 +1384,48 @@
       "onError": "continueRegularOutput",
       "id": "call-orchestrator-id",
       "name": "Llamar Orquestador"
+    },
+    {
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "SELECT CASE WHEN COUNT(*) = 0 THEN 1 ELSE 0 END as puede_alertar FROM anomalias WHERE area = '{{ $('Switch Severidad').item.json.area }}' AND timestamp > NOW() - INTERVAL '3 minutes';",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.6,
+      "position": [560, -200],
+      "id": "throttle-check-id",
+      "name": "Verificar Throttle",
+      "credentials": {
+        "postgres": {
+          "id": "I7MdTzT2OpsQLA7O",
+          "name": "Postgres account"
+        }
+      },
+      "alwaysOutputData": true,
+      "onError": "continueRegularOutput"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": { "caseSensitive": true, "typeValidation": "loose", "version": 3 },
+          "conditions": [
+            {
+              "id": "throttle_cond",
+              "leftValue": "={{ Number($json.puede_alertar || 0) }}",
+              "rightValue": 1,
+              "operator": { "type": "number", "operation": "equals" }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [660, -200],
+      "id": "throttle-if-id",
+      "name": "Puede Alertar?"
     }
   ],
   "connections": {
@@ -1727,7 +1771,7 @@
       "main": [
         [
           {
-            "node": "LLM Diagnóstico Anomalía",
+            "node": "Verificar Throttle",
             "type": "main",
             "index": 0
           },
@@ -1739,7 +1783,7 @@
         ],
         [
           {
-            "node": "LLM Diagnóstico Anomalía",
+            "node": "Verificar Throttle",
             "type": "main",
             "index": 0
           },
@@ -1756,6 +1800,29 @@
             "index": 0
           }
         ]
+      ]
+    },
+    "Verificar Throttle": {
+      "main": [
+        [
+          {
+            "node": "Puede Alertar?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Puede Alertar?": {
+      "main": [
+        [
+          {
+            "node": "LLM Diagnóstico Anomalía",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        []
       ]
     },
     "Gemini Anomalía": {
