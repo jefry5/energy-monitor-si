@@ -1,0 +1,302 @@
+{
+  "id": "wf09",
+  "name": "Agente-Reportes",
+  "nodes": [
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "agent-reports",
+        "responseMode": "responseNode",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2,
+      "position": [-600, 300],
+      "id": "rep-webhook-id",
+      "name": "Webhook Reportes",
+      "webhookId": "agent-reports"
+    },
+    {
+      "parameters": {
+        "rule": {
+          "interval": [
+            { "triggerAtHour": 6 },
+            { "triggerAtHour": 14 },
+            { "triggerAtHour": 22 }
+          ]
+        }
+      },
+      "type": "n8n-nodes-base.scheduleTrigger",
+      "typeVersion": 1.2,
+      "position": [-600, 550],
+      "id": "rep-schedule-id",
+      "name": "Trigger Turno 6/14/22h"
+    },
+    {
+      "parameters": {
+        "jsCode": "// Determinar tipo de reporte y turno actual\nlet reportType = 'shift';\nlet extraData = {};\n\n// ¿Vino del webhook o del schedule?\nconst webhookData = $('Webhook Reportes')?.first()?.json;\nif (webhookData && (webhookData.body || webhookData.report_type)) {\n  const body = webhookData.body || webhookData;\n  reportType = body.report_type || 'shift';\n  extraData = body;\n}\n\n// Determinar turno\nconst hour = new Date().getHours();\nlet shift = 'mañana';\nif (hour >= 14 && hour < 22) shift = 'tarde';\nelse if (hour >= 22 || hour < 6) shift = 'noche';\n\nconst shiftHours = {\n  mañana: { start: 6, end: 14 },\n  tarde: { start: 14, end: 22 },\n  noche: { start: 22, end: 6 }\n};\n\nreturn [{ json: {\n  report_type: reportType,\n  shift,\n  shift_hours: shiftHours[shift],\n  extra: extraData,\n  timestamp: new Date().toISOString()\n} }];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [-380, 400],
+      "id": "rep-determine-type-id",
+      "name": "Determinar Tipo Reporte"
+    },
+    {
+      "parameters": {
+        "rules": {
+          "values": [
+            {
+              "conditions": {
+                "options": { "caseSensitive": false, "typeValidation": "strict", "version": 3 },
+                "conditions": [
+                  { "id": "rt1", "leftValue": "={{ $json.report_type }}", "rightValue": "shift", "operator": { "type": "string", "operation": "equals" } }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "Turno"
+            },
+            {
+              "conditions": {
+                "options": { "caseSensitive": false, "typeValidation": "strict", "version": 3 },
+                "conditions": [
+                  { "id": "rt2", "leftValue": "={{ $json.report_type }}", "rightValue": "incident_resolved", "operator": { "type": "string", "operation": "equals" } }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "Post-Incidente"
+            },
+            {
+              "conditions": {
+                "options": { "caseSensitive": false, "typeValidation": "strict", "version": 3 },
+                "conditions": [
+                  { "id": "rt3", "leftValue": "={{ $json.report_type }}", "rightValue": "weekly", "operator": { "type": "string", "operation": "equals" } }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "Semanal"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.switch",
+      "typeVersion": 3.4,
+      "position": [-160, 400],
+      "id": "rep-switch-type-id",
+      "name": "Switch Tipo Reporte"
+    },
+    {
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "SELECT\n  area,\n  ROUND(SUM(reading)::numeric, 2) as total_kwh,\n  ROUND(AVG(reading)::numeric, 2) as avg_kwh,\n  ROUND(MAX(reading)::numeric, 2) as max_kwh,\n  COUNT(CASE WHEN severity != 'Normal' THEN 1 END) as anomalias\nFROM energy_history\nWHERE timestamp > NOW() - INTERVAL '8 hours'\nGROUP BY area\nORDER BY total_kwh DESC;",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.6,
+      "position": [80, 200],
+      "alwaysOutputData": true,
+      "id": "rep-shift-data-id",
+      "name": "Datos Turno",
+      "credentials": {
+        "postgres": {
+          "id": "I7MdTzT2OpsQLA7O",
+          "name": "Postgres account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "const rows = $input.all().map(i => i.json);\nconst shift = $('Determinar Tipo Reporte').first().json.shift;\nconst COST = 0.18;\nconst CO2 = 0.233;\n\nconst shiftEmoji = { mañana: '🌅', tarde: '☀️', noche: '🌙' };\nconst totalKwh = rows.reduce((s, r) => s + Number(r.total_kwh || 0), 0);\nconst totalAnom = rows.reduce((s, r) => s + Number(r.anomalias || 0), 0);\n\nlet msg = `${shiftEmoji[shift] || '📊'} <b>REPORTE DE TURNO — ${shift.toUpperCase()}</b>\\n`;\nmsg += `📅 ${new Date().toLocaleDateString('es-PE', {timeZone:'America/Lima'})}\\n\\n`;\nmsg += `⚡ Consumo total: <b>${totalKwh.toFixed(2)} kWh</b>\\n`;\nmsg += `💰 Costo: <b>S/.${(totalKwh * COST).toFixed(2)}</b>\\n`;\nmsg += `🌿 CO₂: ${(totalKwh * CO2).toFixed(2)} kg\\n`;\nmsg += `⚠️ Anomalías: ${totalAnom}\\n\\n`;\n\nrows.slice(0, 5).forEach(r => {\n  const flag = Number(r.anomalias) > 0 ? '🔴' : '🟢';\n  msg += `  ${flag} ${r.area}: ${r.total_kwh} kWh (máx: ${r.max_kwh})\\n`;\n});\n\nmsg += `\\n🤖 <i>Reporte automático por turno</i>`;\n\nreturn [{ json: { text: msg, report_type: 'shift', shift } }];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [300, 200],
+      "id": "rep-format-shift-id",
+      "name": "Formatear Reporte Turno"
+    },
+    {
+      "parameters": {
+        "jsCode": "// Reporte post-incidente\nconst extra = $('Determinar Tipo Reporte').first().json.extra;\nconst area = extra.area || 'unknown';\nconst resMins = extra.resolution_time_min || 0;\nconst kwhOpen = extra.kwh_at_open || 0;\nconst kwhClose = extra.kwh_at_close || 0;\nconst savings = Math.max(0, kwhOpen - kwhClose);\n\nlet msg = `✅ <b>REPORTE POST-INCIDENTE</b>\\n`;\nmsg += `📍 Área: <b>${area}</b>\\n`;\nmsg += `⏱ Resolución: <b>${resMins} min</b>\\n`;\nmsg += `📊 kWh al detectar: ${Number(kwhOpen).toFixed(2)}\\n`;\nmsg += `📊 kWh al resolver: ${Number(kwhClose).toFixed(2)}\\n`;\nmsg += `📉 Reducción: ${savings.toFixed(2)} kWh\\n`;\nmsg += `💰 Ahorro: S/.${(savings * 0.18).toFixed(2)}`;\n\nreturn [{ json: { text: msg, report_type: 'incident_resolved', area } }];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [80, 400],
+      "id": "rep-incident-report-id",
+      "name": "Reporte Post-Incidente"
+    },
+    {
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "SELECT\n  area,\n  ROUND(SUM(reading)::numeric, 2) as total_kwh,\n  ROUND(AVG(reading)::numeric, 2) as avg_kwh,\n  COUNT(CASE WHEN severity != 'Normal' THEN 1 END) as anomalias,\n  COUNT(*) as lecturas\nFROM energy_history\nWHERE timestamp > NOW() - INTERVAL '7 days'\nGROUP BY area\nORDER BY total_kwh DESC;",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.6,
+      "position": [80, 600],
+      "alwaysOutputData": true,
+      "id": "rep-weekly-data-id",
+      "name": "Datos Semanales",
+      "credentials": {
+        "postgres": {
+          "id": "I7MdTzT2OpsQLA7O",
+          "name": "Postgres account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "SELECT\n  COUNT(*) as total_incidentes,\n  COUNT(CASE WHEN estado = 'resuelto' THEN 1 END) as resueltos,\n  COUNT(CASE WHEN resolucion_automatica THEN 1 END) as auto_resueltos,\n  COUNT(CASE WHEN estado = 'escalado' THEN 1 END) as escalados,\n  ROUND(AVG(EXTRACT(EPOCH FROM (COALESCE(timestamp_cierre, NOW()) - timestamp_apertura)) / 60)::numeric, 0) as avg_resolucion_min\nFROM incidentes\nWHERE timestamp_apertura > NOW() - INTERVAL '7 days';",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.6,
+      "position": [80, 800],
+      "alwaysOutputData": true,
+      "id": "rep-weekly-incidents-id",
+      "name": "Incidentes Semanales",
+      "credentials": {
+        "postgres": {
+          "id": "I7MdTzT2OpsQLA7O",
+          "name": "Postgres account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "const rows = $('Datos Semanales').all().map(i => i.json);\nconst inc = $('Incidentes Semanales').first().json;\nconst COST = 0.18;\nconst CO2 = 0.233;\n\nconst totalKwh = rows.reduce((s, r) => s + Number(r.total_kwh || 0), 0);\nconst totalAnom = rows.reduce((s, r) => s + Number(r.anomalias || 0), 0);\n\nlet msg = `📋 <b>REPORTE EJECUTIVO SEMANAL</b>\\n`;\nmsg += `━━━━━━━━━━━━━━━━━━━━\\n\\n`;\nmsg += `<b>⚡ CONSUMO</b>\\n`;\nmsg += `Total: <b>${totalKwh.toFixed(2)} kWh</b>\\n`;\nmsg += `Costo: <b>S/.${(totalKwh * COST).toFixed(2)}</b>\\n`;\nmsg += `CO₂: ${(totalKwh * CO2).toFixed(2)} kg\\n\\n`;\n\nmsg += `<b>🚨 ANOMALÍAS</b>\\n`;\nmsg += `Detectadas: ${totalAnom}\\n\\n`;\n\nmsg += `<b>📂 INCIDENTES</b>\\n`;\nmsg += `Total: ${inc.total_incidentes || 0}\\n`;\nmsg += `Resueltos: ${inc.resueltos || 0} (${inc.auto_resueltos || 0} automáticos)\\n`;\nmsg += `Escalados: ${inc.escalados || 0}\\n`;\nmsg += `Tiempo medio resolución: ${inc.avg_resolucion_min || 0} min\\n\\n`;\n\nmsg += `<b>📊 TOP ÁREAS POR CONSUMO</b>\\n`;\nrows.slice(0, 5).forEach(r => {\n  msg += `  • ${r.area}: ${r.total_kwh} kWh (${r.anomalias} alertas)\\n`;\n});\n\nmsg += `\\n🤖 <i>Reporte ejecutivo semanal</i>`;\n\nreturn [{ json: { text: msg, report_type: 'weekly' } }];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [300, 700],
+      "id": "rep-format-weekly-id",
+      "name": "Formatear Reporte Semanal"
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "=https://api.telegram.org/bot{{ $env.TELEGRAM_TOKEN }}/sendMessage",
+        "sendBody": true,
+        "bodyParameters": {
+          "parameters": [
+            { "name": "chat_id", "value": "={{ $env.TELEGRAM_CHAT_ID }}" },
+            { "name": "parse_mode", "value": "HTML" },
+            { "name": "text", "value": "={{ $json.text }}" },
+            { "name": "reply_markup", "value": "={{ JSON.stringify({ inline_keyboard: [[{text:'⬅️ Menú', callback_data:'/start'}]] }) }}" }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.4,
+      "position": [560, 400],
+      "id": "rep-send-telegram-id",
+      "name": "Enviar Reporte Telegram"
+    },
+    {
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "INSERT INTO agent_decisions (agent_name, decision_type, area, output_data, action_taken)\nVALUES ('reports', $1, 'global', $2, $3);",
+        "options": {
+          "queryReplacement": "={{ [$json.report_type, JSON.stringify({shift: $json.shift, type: $json.report_type}), 'report_sent'] }}"
+        }
+      },
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.6,
+      "position": [560, 600],
+      "alwaysOutputData": true,
+      "id": "rep-log-id",
+      "name": "Log Reporte",
+      "credentials": {
+        "postgres": {
+          "id": "I7MdTzT2OpsQLA7O",
+          "name": "Postgres account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "return [{ json: { action: 'report_sent', report_type: $json.report_type || 'unknown' } }];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [780, 400],
+      "id": "rep-response-id",
+      "name": "Respuesta Reportes"
+    },
+    {
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "={{ JSON.stringify({status: 'accepted', agent: 'reports'}) }}",
+        "options": { "responseCode": 202 }
+      },
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.1,
+      "position": [-600, 500],
+      "id": "report-respond-id",
+      "name": "Respuesta Rápida Report"
+    }
+  ],
+  "connections": {
+    "Webhook Reportes": {
+      "main": [[
+        { "node": "Respuesta Rápida Report", "type": "main", "index": 0 },
+        { "node": "Determinar Tipo Reporte", "type": "main", "index": 0 }
+      ]]
+    },
+    "Trigger Turno 6/14/22h": {
+      "main": [[{ "node": "Determinar Tipo Reporte", "type": "main", "index": 0 }]]
+    },
+    "Determinar Tipo Reporte": {
+      "main": [[{ "node": "Switch Tipo Reporte", "type": "main", "index": 0 }]]
+    },
+    "Switch Tipo Reporte": {
+      "main": [
+        [{ "node": "Datos Turno", "type": "main", "index": 0 }],
+        [{ "node": "Reporte Post-Incidente", "type": "main", "index": 0 }],
+        [
+          { "node": "Datos Semanales", "type": "main", "index": 0 },
+          { "node": "Incidentes Semanales", "type": "main", "index": 0 }
+        ]
+      ]
+    },
+    "Datos Turno": {
+      "main": [[{ "node": "Formatear Reporte Turno", "type": "main", "index": 0 }]]
+    },
+    "Formatear Reporte Turno": {
+      "main": [[{ "node": "Enviar Reporte Telegram", "type": "main", "index": 0 }]]
+    },
+    "Reporte Post-Incidente": {
+      "main": [[{ "node": "Enviar Reporte Telegram", "type": "main", "index": 0 }]]
+    },
+    "Datos Semanales": {
+      "main": [[{ "node": "Formatear Reporte Semanal", "type": "main", "index": 0 }]]
+    },
+    "Incidentes Semanales": {
+      "main": [[{ "node": "Formatear Reporte Semanal", "type": "main", "index": 0 }]]
+    },
+    "Formatear Reporte Semanal": {
+      "main": [[{ "node": "Enviar Reporte Telegram", "type": "main", "index": 0 }]]
+    },
+    "Enviar Reporte Telegram": {
+      "main": [[
+        { "node": "Log Reporte", "type": "main", "index": 0 },
+        { "node": "Respuesta Reportes", "type": "main", "index": 0 }
+      ]]
+    },
+    "Log Reporte": {
+      "main": [[]]
+    }
+  },
+  "active": true,
+  "settings": {
+    "executionOrder": "v2",
+    "callerPolicy": "workflowsFromSameOwner"
+  },
+  "meta": { "templateCredsSetupCompleted": true },
+  "tags": [{ "name": "agents" }]
+}

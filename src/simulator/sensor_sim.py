@@ -1,7 +1,8 @@
 """
-Energy Monitor Simulator Pro v2
+Energy Monitor Simulator Pro v3
 ================================
-Advanced MQTT sensor simulator with realistic patterns, multiple failure modes,
+Advanced MQTT sensor simulator with bidirectional communication,
+virtual relay actuators, realistic patterns, multiple failure modes,
 gradual anomalies, seasonal profiles, and structured logging.
 """
 
@@ -57,6 +58,11 @@ class Severity(str, Enum):
     CRITICAL    = "Critical"
 
 
+class RelayState(str, Enum):
+    ENCENDIDO = "ENCENDIDO"
+    APAGADO   = "APAGADO"
+
+
 # ──────────────────────────────────────────────
 # Dataclasses
 # ──────────────────────────────────────────────
@@ -83,14 +89,54 @@ class SensorReading:
     power_factor: float
     temperature_c: float
     humidity_pct: float
-    quality: str                # "ok" | "degraded" | "failed"
+    quality: str                # "ok" | "degraded" | "failed" | "relay_off"
     device_count: int
     floor: int
     sequence: int               # número de lectura para detectar gaps
+    relay_state: str = "ENCENDIDO"  # estado del relé virtual
     tags: List[str] = field(default_factory=list)
 
     def to_dict(self) -> dict:
         return asdict(self)
+
+
+# ──────────────────────────────────────────────
+# Virtual Relay Manager — Actuadores Virtuales
+# ──────────────────────────────────────────────
+class RelayManager:
+    """Manages virtual relay (breaker) states per area."""
+    
+    def __init__(self, areas: List[str]):
+        self._states: Dict[str, RelayState] = {a: RelayState.ENCENDIDO for a in areas}
+        self._last_changed: Dict[str, str] = {}
+        self._change_reasons: Dict[str, str] = {}
+    
+    def get_state(self, area: str) -> RelayState:
+        return self._states.get(area, RelayState.ENCENDIDO)
+    
+    def set_state(self, area: str, state: RelayState, reason: str = "") -> bool:
+        if area not in self._states:
+            log.warning("Relay: unknown area '%s'", area)
+            return False
+        old = self._states[area]
+        self._states[area] = state
+        self._last_changed[area] = datetime.now(timezone.utc).isoformat()
+        self._change_reasons[area] = reason
+        log.info("⚡ RELAY [%s] %s → %s | Motivo: %s", area, old.value, state.value, reason)
+        return True
+    
+    def is_on(self, area: str) -> bool:
+        return self.get_state(area) == RelayState.ENCENDIDO
+    
+    def get_all_states(self) -> Dict[str, dict]:
+        return {
+            area: {
+                "estado": self._states[area].value,
+                "ultimo_cambio": self._last_changed.get(area, ""),
+                "motivo": self._change_reasons.get(area, ""),
+            }
+            for area in self._states
+        }
 
 
 # ──────────────────────────────────────────────
@@ -262,7 +308,13 @@ class SensorSimulator:
 
 
 # ──────────────────────────────────────────────
-# MQTT callbacks
+# Global Relay Manager
+# ──────────────────────────────────────────────
+relay_mgr = RelayManager(list(AREAS.keys()))
+
+
+# ──────────────────────────────────────────────
+# MQTT callbacks (Bidirectional)
 # ──────────────────────────────────────────────
 def _on_connect(client, userdata, flags, reason_code, properties):
     if reason_code == 0:
@@ -275,8 +327,87 @@ def _on_connect(client, userdata, flags, reason_code, properties):
             qos=QOS,
             retain=True,
         )
+        # ── Subscribe to control topics (bidirectional) ──
+        control_topic = f"{TOPIC_PREFIX}/+/comando"
+        client.subscribe(control_topic, qos=QOS)
+        log.info("📡  Subscribed to control topic: %s", control_topic)
+        
+        # Subscribe to system-wide commands
+        system_topic = f"{TOPIC_PREFIX}/system/comando"
+        client.subscribe(system_topic, qos=QOS)
+        log.info("📡  Subscribed to system topic: %s", system_topic)
     else:
         log.error("❌  Connection failed with code %s", reason_code)
+
+
+def _on_message(client, userdata, msg):
+    """Process incoming control commands from n8n/Telegram/agents."""
+    try:
+        topic = msg.topic
+        payload = json.loads(msg.payload.decode("utf-8"))
+        log.info("📨  Command received on %s: %s", topic, payload)
+        
+        # Parse area from topic: edificio/{area}/comando
+        parts = topic.split("/")
+        if len(parts) >= 3 and parts[-1] == "comando":
+            area = parts[1] if parts[1] != "system" else None
+        else:
+            log.warning("Unknown command topic format: %s", topic)
+            return
+        
+        accion = payload.get("accion", "").lower()
+        motivo = payload.get("motivo", "comando_externo")
+        origen = payload.get("origen", "desconocido")
+        
+        # ── Relay control commands ──
+        if accion in ("cortar_energia", "corte_emergencia", "apagar"):
+            if area and area in AREAS:
+                relay_mgr.set_state(area, RelayState.APAGADO, motivo)
+                _publish_relay_ack(client, area, "APAGADO", motivo, origen)
+            elif area is None:
+                # System-wide cutoff
+                for a in AREAS:
+                    relay_mgr.set_state(a, RelayState.APAGADO, motivo)
+                _publish_relay_ack(client, "system", "APAGADO", motivo, origen)
+                
+        elif accion in ("restaurar_energia", "encender", "restablecer"):
+            if area and area in AREAS:
+                relay_mgr.set_state(area, RelayState.ENCENDIDO, motivo)
+                _publish_relay_ack(client, area, "ENCENDIDO", motivo, origen)
+            elif area is None:
+                for a in AREAS:
+                    relay_mgr.set_state(a, RelayState.ENCENDIDO, motivo)
+                _publish_relay_ack(client, "system", "ENCENDIDO", motivo, origen)
+        
+        elif accion == "status_rele":
+            # Publish current relay states
+            states = relay_mgr.get_all_states()
+            client.publish(
+                f"{TOPIC_PREFIX}/system/relay_status",
+                json.dumps({"relay_states": states, "ts": datetime.now(timezone.utc).isoformat()}),
+                qos=QOS,
+            )
+        
+        else:
+            log.warning("Unknown command action: %s", accion)
+            
+    except json.JSONDecodeError:
+        log.error("Invalid JSON in command: %s", msg.payload)
+    except Exception as e:
+        log.error("Error processing command: %s", e)
+
+
+def _publish_relay_ack(client: mqtt.Client, area: str, new_state: str, motivo: str, origen: str):
+    """Publish relay state change acknowledgement."""
+    ack = {
+        "area": area,
+        "relay_state": new_state,
+        "motivo": motivo,
+        "origen": origen,
+        "ts": datetime.now(timezone.utc).isoformat(),
+    }
+    client.publish(f"{TOPIC_PREFIX}/system/relay_ack", json.dumps(ack), qos=QOS)
+    log.info("✅  Relay ACK published for %s → %s", area, new_state)
 
 
 def _on_disconnect(client, userdata, flags, reason_code, properties):
@@ -292,7 +423,8 @@ def _on_publish(client, userdata, mid, reason_code, properties):
 # Publisher
 # ──────────────────────────────────────────────
 def publish_batch(client: mqtt.Client, sim: SensorSimulator) -> None:
-    """Publishes one reading per area. In FLOOD mode, sends 10x."""
+    """Publishes one reading per area. In FLOOD mode, sends 10x.
+    Respects relay states — areas with APAGADO relay produce zero readings."""
     iterations = 10 if MODE == SimMode.FLOOD else 1
 
     for _ in range(iterations):
@@ -300,6 +432,27 @@ def publish_batch(client: mqtt.Client, sim: SensorSimulator) -> None:
         published = 0
 
         for area, profile in AREAS.items():
+            # ── Check relay state ──
+            if not relay_mgr.is_on(area):
+                # Relay is OFF: produce a zero reading
+                now_utc = datetime.now(timezone.utc).isoformat()
+                reading = SensorReading(
+                    area=area, kwh=0.0, timestamp=now_utc,
+                    modo="relay_off", sensor_id=f"{BUILDING_ID}_{area}_s{profile.floor:02d}",
+                    voltage=0.0, current=0.0, power_factor=0.0,
+                    temperature_c=0.0, humidity_pct=0.0, quality="relay_off",
+                    device_count=0, floor=profile.floor,
+                    sequence=sim._seq.get(area, 0),
+                    relay_state=RelayState.APAGADO.value,
+                    tags=["relay_off"],
+                )
+                topic = f"{TOPIC_PREFIX}/{area}/consumo"
+                payload = json.dumps(reading.to_dict())
+                client.publish(topic, payload, qos=QOS)
+                published += 1
+                log.info("[RELAY_OFF] %-25s  0.0000 kWh  (relay apagado)", area)
+                continue
+            
             reading = sim.get_reading(area, profile)
             if reading is None:
                 continue
@@ -381,6 +534,7 @@ def main() -> None:
     client.on_connect    = _on_connect
     client.on_disconnect = _on_disconnect
     client.on_publish    = _on_publish
+    client.on_message    = _on_message
 
     # Retry connection loop
     while _running:

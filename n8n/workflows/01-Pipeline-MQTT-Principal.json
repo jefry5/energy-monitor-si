@@ -1,4 +1,5 @@
 {
+  "id": "wf01",
   "name": "Energía-Monitor-Pro-v2",
   "nodes": [
     {
@@ -18,8 +19,8 @@
       "name": "Telegram Trigger",
       "credentials": {
         "telegramApi": {
-          "id": "new-telegram-cred-id",
-          "name": "Energy Monitor Bot"
+          "id": "Qlo9IQDj5YNDrkha",
+          "name": "Telegram account"
         }
       }
     },
@@ -200,6 +201,29 @@
               },
               "renameOutput": true,
               "outputKey": "Exportar"
+            },
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": false,
+                  "typeValidation": "strict",
+                  "version": 3
+                },
+                "conditions": [
+                  {
+                    "id": "c8",
+                    "leftValue": "={{ $json.text }}",
+                    "rightValue": "restore_|cut_|feedback_",
+                    "operator": {
+                      "type": "string",
+                      "operation": "regex"
+                    }
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "Accion_Operativa"
             }
           ]
         },
@@ -266,8 +290,8 @@
       "name": "Obtener Reporte 24h",
       "credentials": {
         "postgres": {
-          "id": "new-postgres-cred-id",
-          "name": "Postgres local"
+          "id": "I7MdTzT2OpsQLA7O",
+          "name": "Postgres account"
         }
       }
     },
@@ -336,14 +360,14 @@
       "name": "Obtener Status Áreas",
       "credentials": {
         "postgres": {
-          "id": "new-postgres-cred-id",
-          "name": "Postgres local"
+          "id": "I7MdTzT2OpsQLA7O",
+          "name": "Postgres account"
         }
       }
     },
     {
       "parameters": {
-        "jsCode": "const rows = $input.all().map(i => i.json);\nconst sIcon = { Normal: '✅', Warning: '⚠️', Critical: '🚨' };\nconst barChar = (pct) => {\n  const p = Math.min(Math.max(pct, 0), 100);\n  const filled = Math.round(p / 10);\n  return '█'.repeat(filled) + '░'.repeat(10 - filled) + ` ${p.toFixed(0)}%`;\n};\n\nlet msg = `⚡ <b>ESTADO EN TIEMPO REAL</b>\\n━━━━━━━━━━━━━━━━━━━━\\n`;\nmsg += `🕒 <i>${new Date().toLocaleString('es-ES', {timeZone:'America/Lima'})}</i>\\n\\n`;\n\nrows.forEach(r => {\n  const icon = sIcon[r.estado] || '⚪';\n  const dev = Number(r.desviacion_pct) || 0;\n  const devStr = dev >= 0 ? `+${dev}%` : `${dev}%`;\n  const alertBadge = r.alertas_1h > 0 ? ` 🔔(${r.alertas_1h})` : '';\n  msg += `${icon} <b>${r.area}</b>${alertBadge}\\n`;\n  msg += `   ⚡ ${r.actual.toFixed(2)} kWh @ ${r.hora}\\n`;\n  msg += `   📊 ${barChar(Math.abs(dev))}\\n`;\n  msg += `   📈 EMA: ${r.promedio.toFixed(2)} kWh | Δ <b>${devStr}</b>\\n\\n`;\n});\n\nmsg += `🤖 <i>Actualización automática cada 30s</i>`;\n\nreturn [{ json: { text: msg, chat_id: $('Normalizar Input').first().json.chat_id } }];"
+        "jsCode": "const rows = $input.all().map(i => i.json);\nconst sIcon = { Normal: '\u2705', Warning: '\u26a0\ufe0f', Critical: '\ud83d\udea8' };\nconst barChar = (pct) => {\n  const p = Math.min(Math.max(pct, 0), 100);\n  const filled = Math.round(p / 10);\n  return '\u2588'.repeat(filled) + '\u2591'.repeat(10 - filled) + ` ${p.toFixed(0)}%`;\n};\n\nlet msg = `\u26a1 <b>ESTADO EN TIEMPO REAL</b>\\n\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\\n`;\nmsg += `\ud83d\udd52 <i>${new Date().toLocaleString('es-ES', {timeZone:'America/Lima'})}</i>\\n\\n`;\n\nrows.forEach(r => {\n  const icon = sIcon[r.estado] || '\u26aa';\n  const dev = Number(r.desviacion_pct) || 0;\n  const devStr = dev >= 0 ? `+${dev}%` : `${dev}%`;\n  const alertBadge = r.alertas_1h > 0 ? ` \ud83d\udd14(${r.alertas_1h})` : '';\n  const actualNum = Number(r.actual) || 0;\n  const promedioNum = Number(r.promedio) || 0;\n  msg += `${icon} <b>${r.area}</b>${alertBadge}\\n`;\n  msg += `   \u26a1 ${actualNum.toFixed(2)} kWh @ ${r.hora}\\n`;\n  msg += `   \ud83d\udcca ${barChar(Math.abs(dev))}\\n`;\n  msg += `   \ud83d\udcc8 EMA: ${promedioNum.toFixed(2)} kWh | \u0394 <b>${devStr}</b>\\n\\n`;\n});\n\nmsg += `\ud83e\udd16 <i>Actualizaci\u00f3n autom\u00e1tica cada 30s</i>`;\n\nreturn [{ json: { text: msg, chat_id: $('Normalizar Input').first().json.chat_id } }];"
       },
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
@@ -406,8 +430,8 @@
       "name": "Obtener Anomalías",
       "credentials": {
         "postgres": {
-          "id": "new-postgres-cred-id",
-          "name": "Postgres local"
+          "id": "I7MdTzT2OpsQLA7O",
+          "name": "Postgres account"
         }
       }
     },
@@ -476,8 +500,8 @@
       "name": "Datos para Predicción",
       "credentials": {
         "postgres": {
-          "id": "new-postgres-cred-id",
-          "name": "Postgres local"
+          "id": "I7MdTzT2OpsQLA7O",
+          "name": "Postgres account"
         }
       }
     },
@@ -517,7 +541,7 @@
       "name": "Gemini Predicción",
       "credentials": {
         "googlePalmApi": {
-          "id": "KCTdNJeeCP1jXUX5",
+          "id": "AWtFWGrPJ4SsvWCn",
           "name": "Google Gemini(PaLM) Api account"
         }
       }
@@ -587,8 +611,8 @@
       "name": "Datos para Exportar",
       "credentials": {
         "postgres": {
-          "id": "new-postgres-cred-id",
-          "name": "Postgres local"
+          "id": "I7MdTzT2OpsQLA7O",
+          "name": "Postgres account"
         }
       }
     },
@@ -654,8 +678,8 @@
       "name": "Contexto BD para IA",
       "credentials": {
         "postgres": {
-          "id": "new-postgres-cred-id",
-          "name": "Postgres local"
+          "id": "I7MdTzT2OpsQLA7O",
+          "name": "Postgres account"
         }
       }
     },
@@ -708,7 +732,7 @@
       "name": "Gemini Chat Model",
       "credentials": {
         "googlePalmApi": {
-          "id": "KCTdNJeeCP1jXUX5",
+          "id": "AWtFWGrPJ4SsvWCn",
           "name": "Google Gemini(PaLM) Api account"
         }
       }
@@ -763,8 +787,8 @@
       "name": "MQTT Trigger",
       "credentials": {
         "mqtt": {
-          "id": "mqtt-cred-id",
-          "name": "MQTT local"
+          "id": "xjg1nt8CQpLp0oBz",
+          "name": "MQTT account"
         }
       }
     },
@@ -797,7 +821,7 @@
       "name": "Obtener EMA",
       "credentials": {
         "postgres": {
-          "id": "Bibgu4bccT0Gca2c",
+          "id": "I7MdTzT2OpsQLA7O",
           "name": "Postgres account"
         }
       }
@@ -831,7 +855,7 @@
       "name": "Guardar EMA",
       "credentials": {
         "postgres": {
-          "id": "Bibgu4bccT0Gca2c",
+          "id": "I7MdTzT2OpsQLA7O",
           "name": "Postgres account"
         }
       }
@@ -852,7 +876,7 @@
       "name": "Guardar Historial",
       "credentials": {
         "postgres": {
-          "id": "Bibgu4bccT0Gca2c",
+          "id": "I7MdTzT2OpsQLA7O",
           "name": "Postgres account"
         }
       }
@@ -1027,7 +1051,7 @@
       "name": "Gemini Anomalía",
       "credentials": {
         "googlePalmApi": {
-          "id": "KCTdNJeeCP1jXUX5",
+          "id": "AWtFWGrPJ4SsvWCn",
           "name": "Google Gemini(PaLM) Api account"
         }
       }
@@ -1050,8 +1074,8 @@
       "name": "Guardar Anomalía",
       "credentials": {
         "postgres": {
-          "id": "postgres-cred-id",
-          "name": "Postgres local"
+          "id": "I7MdTzT2OpsQLA7O",
+          "name": "Postgres account"
         }
       }
     },
@@ -1076,7 +1100,7 @@
             },
             {
               "name": "reply_markup",
-              "value": "={{ JSON.stringify({ inline_keyboard: [[{text:'📊 Ver Estado', callback_data:'get_status'}, {text:'🚨 Ver Anomalías', callback_data:'get_anomalias'}]] }) }}"
+              "value": "={{ JSON.stringify({ inline_keyboard: [[{text:'⚠️ Ignorar', callback_data:'feedback_falso_' + ($('Switch Severidad').item.json.area || 'unknown')}, {text:'🔴 Cortar Energía', callback_data:'cut_' + ($('Switch Severidad').item.json.area || 'unknown')}],[{text:'✅ Resuelto', callback_data:'feedback_resuelto_' + ($('Switch Severidad').item.json.area || 'unknown')}, {text:'📊 Ver Estado', callback_data:'get_status'}]] }) }}"
             }
           ]
         },
@@ -1090,6 +1114,274 @@
       ],
       "id": "alert-telegram-id",
       "name": "Alerta Telegram"
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "=http://dashboard:8000/api/mqtt/publish",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ JSON.stringify({ topic: `edificio/${$('Switch Severidad').item.json.area}/comando`, payload: { accion: 'corte_emergencia', motivo: `Anomalía ${$('Switch Severidad').item.json.severidad}: ${$('Switch Severidad').item.json.desviacion}% desviación`, origen: 'n8n_self_healing' } }) }}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.4,
+      "position": [
+        1200,
+        -350
+      ],
+      "id": "self-healing-mqtt-id",
+      "name": "Self-Healing MQTT Corte"
+    },
+    {
+      "parameters": {
+        "jsCode": "// Evaluar si la anomalía requiere corte automático de emergencia\nconst item = $('Switch Severidad').item.json;\nconst sev = (item.severidad || '').toString().toLowerCase();\nconst desviacion = Number(item.desviacion) || 0;\nconst area = item.area || '';\n\n// Reglas de auto-corte:\n// 1. Severidad Crítica con desviación > 80%\n// 2. Área sensible (sala_servidores queda excluida por seguridad)\nconst areasProtegidas = ['sala_servidores']; // Nunca cortar automáticamente\nconst requiereCorte = sev.includes('crit') && desviacion > 80 && !areasProtegidas.includes(area);\n\nreturn [{ json: { ...item, requiere_corte: requiereCorte, motivo: requiereCorte ? `Auto-corte: ${desviacion}% desviación` : 'Solo alerta' } }];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1200,
+        -200
+      ],
+      "id": "evaluar-self-healing-id",
+      "name": "Evaluar Self-Healing"
+    },
+    {
+      "parameters": {
+        "rules": {
+          "values": [
+            {
+              "conditions": {
+                "options": { "caseSensitive": false, "typeValidation": "strict", "version": 3 },
+                "conditions": [
+                  {
+                    "id": "sh1",
+                    "leftValue": "={{ $json.requiere_corte }}",
+                    "rightValue": true,
+                    "operator": { "type": "boolean", "operation": "equals" }
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "Cortar"
+            },
+            {
+              "conditions": {
+                "options": { "caseSensitive": false, "typeValidation": "strict", "version": 3 },
+                "conditions": [
+                  {
+                    "id": "sh2",
+                    "leftValue": "={{ $json.requiere_corte }}",
+                    "rightValue": false,
+                    "operator": { "type": "boolean", "operation": "equals" }
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "Solo Alerta"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.switch",
+      "typeVersion": 3.4,
+      "position": [
+        1400,
+        -200
+      ],
+      "id": "switch-self-healing-id",
+      "name": "Switch Self-Healing"
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "=https://api.telegram.org/bot{{ $env.TELEGRAM_TOKEN }}/sendMessage",
+        "sendBody": true,
+        "bodyParameters": {
+          "parameters": [
+            {
+              "name": "chat_id",
+              "value": "={{ $env.TELEGRAM_CHAT_ID }}"
+            },
+            {
+              "name": "parse_mode",
+              "value": "HTML"
+            },
+            {
+              "name": "text",
+              "value": "=🚨 <b>CORTE DE EMERGENCIA AUTOMÁTICO</b>\n━━━━━━━━━━━━━━━━━━━━\n📍 Área: <b>{{ $json.area }}</b>\n⚡ Consumo: <b>{{ $json.kwh }} kWh</b>\n📉 Desviación: <b>{{ $json.desviacion }}%</b>\n\n🔴 Se ha ejecutado un <b>corte automático</b> del suministro eléctrico.\n💡 Motivo: {{ $json.motivo }}\n\n🤖 <i>Sistema Self-Healing v1</i>"
+            },
+            {
+              "name": "reply_markup",
+              "value": "={{ JSON.stringify({ inline_keyboard: [ [{text:'🟢 Restaurar Energía', callback_data:'restore_' + $json.area}], [{text:'📊 Ver Estado', callback_data:'get_status'}, {text:'🚨 Ver Anomalías', callback_data:'get_anomalias'}] ] }) }}"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.4,
+      "position": [
+        1600,
+        -350
+      ],
+      "id": "telegram-corte-notif-id",
+      "name": "Notificar Corte Telegram"
+    },
+    {
+      "parameters": {
+        "jsCode": "// Procesar callbacks de acción operativa\nconst text = $('Normalizar Input').first().json.text || '';\nconst chat_id = $('Normalizar Input').first().json.chat_id;\n\nlet accion = '';\nlet area = '';\nlet tipo_feedback = '';\n\n// Restore energy: restore_{area}\nif (text.startsWith('restore_')) {\n  area = text.replace('restore_', '');\n  accion = 'restaurar_energia';\n}\n// Cut energy: cut_{area}\nelse if (text.startsWith('cut_')) {\n  area = text.replace('cut_', '');\n  accion = 'cortar_energia';\n}\n// Feedback: feedback_resuelto_{area} or feedback_falso_{area}\nelse if (text.startsWith('feedback_resuelto_')) {\n  area = text.replace('feedback_resuelto_', '');\n  tipo_feedback = 'resuelto';\n}\nelse if (text.startsWith('feedback_falso_')) {\n  area = text.replace('feedback_falso_', '');\n  tipo_feedback = 'falso_positivo';\n}\n\nreturn [{ json: { chat_id, area, accion, tipo_feedback, original_text: text } }];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        100,
+        1200
+      ],
+      "id": "parse-action-callback-id",
+      "name": "Parsear Acción Operativa"
+    },
+    {
+      "parameters": {
+        "rules": {
+          "values": [
+            {
+              "conditions": {
+                "options": { "caseSensitive": false, "typeValidation": "strict", "version": 3 },
+                "conditions": [
+                  { "id": "ac1", "leftValue": "={{ $json.accion }}", "rightValue": "", "operator": { "type": "string", "operation": "notEquals" } }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "Relay Control"
+            },
+            {
+              "conditions": {
+                "options": { "caseSensitive": false, "typeValidation": "strict", "version": 3 },
+                "conditions": [
+                  { "id": "ac2", "leftValue": "={{ $json.tipo_feedback }}", "rightValue": "", "operator": { "type": "string", "operation": "notEquals" } }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "Feedback"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.switch",
+      "typeVersion": 3.4,
+      "position": [
+        300,
+        1200
+      ],
+      "id": "switch-accion-id",
+      "name": "Switch Acción"
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "=http://dashboard:8000/api/relays",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ JSON.stringify({ area: $json.area, accion: $json.accion, motivo: 'Operador via Telegram', origen: 'telegram' }) }}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.4,
+      "position": [
+        500,
+        1100
+      ],
+      "id": "relay-control-api-id",
+      "name": "Control Relé API"
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "=https://api.telegram.org/bot{{ $env.TELEGRAM_TOKEN }}/sendMessage",
+        "sendBody": true,
+        "bodyParameters": {
+          "parameters": [
+            { "name": "chat_id", "value": "={{ $('Parsear Acción Operativa').first().json.chat_id }}" },
+            { "name": "parse_mode", "value": "HTML" },
+            { "name": "text", "value": "=✅ <b>Acción ejecutada</b>\n📍 Área: <b>{{ $('Parsear Acción Operativa').first().json.area }}</b>\n⚡ Acción: <b>{{ $('Parsear Acción Operativa').first().json.accion }}</b>\n🤖 <i>Relé actualizado correctamente</i>" },
+            { "name": "reply_markup", "value": "={{ JSON.stringify({ inline_keyboard: [[{text:'📊 Ver Estado', callback_data:'get_status'}, {text:'⬅️ Menú', callback_data:'/start'}]] }) }}" }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.4,
+      "position": [
+        700,
+        1100
+      ],
+      "id": "confirmar-relay-id",
+      "name": "Confirmar Relay Telegram"
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "=http://dashboard:8000/api/feedback",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ JSON.stringify({ usuario: 'telegram_operator', tipo: $json.tipo_feedback, comentario: `Feedback para ${$json.area}` }) }}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.4,
+      "position": [
+        500,
+        1300
+      ],
+      "id": "submit-feedback-api-id",
+      "name": "Guardar Feedback API"
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "=https://api.telegram.org/bot{{ $env.TELEGRAM_TOKEN }}/sendMessage",
+        "sendBody": true,
+        "bodyParameters": {
+          "parameters": [
+            { "name": "chat_id", "value": "={{ $('Parsear Acción Operativa').first().json.chat_id }}" },
+            { "name": "parse_mode", "value": "HTML" },
+            { "name": "text", "value": "=📝 <b>Feedback registrado</b>\n📍 Área: <b>{{ $('Parsear Acción Operativa').first().json.area }}</b>\n🏷️ Tipo: <b>{{ $('Parsear Acción Operativa').first().json.tipo_feedback }}</b>\n\n✅ Gracias por tu retroalimentación. Esto ayuda a mejorar los umbrales de detección." },
+            { "name": "reply_markup", "value": "={{ JSON.stringify({ inline_keyboard: [[{text:'⬅️ Menú', callback_data:'/start'}]] }) }}" }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.4,
+      "position": [
+        700,
+        1300
+      ],
+      "id": "confirmar-feedback-id",
+      "name": "Confirmar Feedback Telegram"
+    },
+    {
+      "parameters": {
+        "url": "={{ $env.N8N_WEBHOOK_URL || 'http://n8n:5678' }}/webhook/agent-orchestrator",
+        "method": "POST",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ JSON.stringify({ area: $('Calcular EMA').item.json.area, kwh: $('Calcular EMA').item.json.kwh, ema: $('Calcular EMA').item.json.ema, desviacion: $('Calcular EMA').item.json.desviacion, severidad: $('Calcular EMA').item.json.severidad, timestamp: $('Calcular EMA').item.json.timestamp }) }}",
+        "options": { "timeout": 10000, "allowUnauthorizedCerts": true }
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.4,
+      "position": [500, -450],
+      "onError": "continueRegularOutput",
+      "id": "call-orchestrator-id",
+      "name": "Llamar Orquestador"
     }
   ],
   "connections": {
@@ -1162,6 +1454,13 @@
         [
           {
             "node": "Datos para Exportar",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Parsear Acción Operativa",
             "type": "main",
             "index": 0
           }
@@ -1394,6 +1693,11 @@
             "node": "Switch Severidad",
             "type": "main",
             "index": 0
+          },
+          {
+            "node": "Llamar Orquestador",
+            "type": "main",
+            "index": 0
           }
         ]
       ]
@@ -1488,11 +1792,121 @@
     },
     "Alerta Telegram": {
       "main": [
+        [
+          {
+            "node": "Evaluar Self-Healing",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Evaluar Self-Healing": {
+      "main": [
+        [
+          {
+            "node": "Switch Self-Healing",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Switch Self-Healing": {
+      "main": [
+        [
+          {
+            "node": "Self-Healing MQTT Corte",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        []
+      ]
+    },
+    "Self-Healing MQTT Corte": {
+      "main": [
+        [
+          {
+            "node": "Notificar Corte Telegram",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Notificar Corte Telegram": {
+      "main": [
+        []
+      ]
+    },
+    "Parsear Acción Operativa": {
+      "main": [
+        [
+          {
+            "node": "Switch Acción",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Switch Acción": {
+      "main": [
+        [
+          {
+            "node": "Control Relé API",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Guardar Feedback API",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Control Relé API": {
+      "main": [
+        [
+          {
+            "node": "Confirmar Relay Telegram",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Confirmar Relay Telegram": {
+      "main": [
+        []
+      ]
+    },
+    "Guardar Feedback API": {
+      "main": [
+        [
+          {
+            "node": "Confirmar Feedback Telegram",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Confirmar Feedback Telegram": {
+      "main": [
+        []
+      ]
+    },
+    "Llamar Orquestador": {
+      "main": [
         []
       ]
     }
   },
-  "active": false,
   "settings": {
     "executionOrder": "v1",
     "binaryMode": "separate",

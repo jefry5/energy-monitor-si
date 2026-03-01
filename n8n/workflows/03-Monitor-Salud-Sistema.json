@@ -1,5 +1,4 @@
-{
-    "name": "Monitor-Salud-Sistema",
+{  "id": "wf03",    "name": "Monitor-Salud-Sistema",
     "nodes": [
         {
             "parameters": {
@@ -37,8 +36,8 @@
             "name": "Verificar Últimas Lecturas",
             "credentials": {
                 "postgres": {
-                    "id": "new-postgres-cred-id",
-                    "name": "Postgres local"
+                    "id": "I7MdTzT2OpsQLA7O",
+                    "name": "Postgres account"
                 }
             }
         },

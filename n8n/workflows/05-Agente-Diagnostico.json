@@ -1,0 +1,177 @@
+{
+  "id": "wf05",
+  "name": "Agente-Diagnostico",
+  "nodes": [
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "agent-diagnosis",
+        "responseMode": "responseNode",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2,
+      "position": [-600, 300],
+      "id": "diag-webhook-id",
+      "name": "Webhook Diagnóstico",
+      "webhookId": "agent-diagnosis"
+    },
+    {
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "SELECT\n  COUNT(*) as total_readings,\n  ROUND(AVG(reading)::numeric, 4) as avg_kwh,\n  ROUND(MAX(reading)::numeric, 4) as max_kwh,\n  ROUND(MIN(reading)::numeric, 4) as min_kwh,\n  ROUND(STDDEV(reading)::numeric, 4) as stddev_kwh,\n  COUNT(CASE WHEN severity != 'Normal' THEN 1 END) as anomaly_count,\n  MAX(timestamp) as last_reading\nFROM energy_history\nWHERE area = '{{ $json.body.area || $json.area }}'\n  AND timestamp > NOW() - INTERVAL '24 hours';",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.6,
+      "position": [-380, 200],
+      "alwaysOutputData": true,
+      "id": "diag-history-24h-id",
+      "name": "Historial 24h",
+      "credentials": {
+        "postgres": {
+          "id": "I7MdTzT2OpsQLA7O",
+          "name": "Postgres account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "SELECT\n  date_trunc('hour', timestamp) as hora,\n  ROUND(AVG(reading)::numeric, 4) as avg_kwh,\n  COUNT(*) as lecturas,\n  MAX(severity) as peor_estado\nFROM energy_history\nWHERE area = '{{ $('Webhook Diagnóstico').first().json.body.area || $('Webhook Diagnóstico').first().json.area }}'\n  AND timestamp > NOW() - INTERVAL '24 hours'\nGROUP BY hora\nORDER BY hora;",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.6,
+      "position": [-380, 450],
+      "alwaysOutputData": true,
+      "id": "diag-hourly-trend-id",
+      "name": "Tendencia Horaria",
+      "credentials": {
+        "postgres": {
+          "id": "I7MdTzT2OpsQLA7O",
+          "name": "Postgres account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "SELECT id, severidad, valor_kwh, ema_kwh, desviacion,\n  to_char(timestamp, 'HH24:MI') as hora\nFROM anomalias\nWHERE area = '{{ $('Webhook Diagnóstico').first().json.body.area || $('Webhook Diagnóstico').first().json.area }}'\n  AND timestamp > NOW() - INTERVAL '24 hours'\nORDER BY timestamp DESC\nLIMIT 10;",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.6,
+      "position": [-380, 650],
+      "alwaysOutputData": true,
+      "id": "diag-recent-anomalies-id",
+      "name": "Anomalías Recientes",
+      "credentials": {
+        "postgres": {
+          "id": "I7MdTzT2OpsQLA7O",
+          "name": "Postgres account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "mode": "combine",
+        "combineBy": "combineAll",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.merge",
+      "typeVersion": 3.1,
+      "position": [-100, 300],
+      "id": "diag-merge-id",
+      "name": "Unir Datos Diagnóstico"
+    },
+    {
+      "parameters": {
+        "jsCode": "// ═══════════════════════════════════════\n// AGENTE DIAGNÓSTICO — Clasificación de Patrones\n// ═══════════════════════════════════════\nconst input = $('Webhook Diagnóstico').first().json.body || $('Webhook Diagnóstico').first().json;\nconst area = input.area || 'unknown';\nconst kwh = Number(input.kwh) || 0;\nconst ema = Number(input.ema) || 0;\nconst severity = input.severity || 'Normal';\n\n// Datos históricos\nconst hist = $('Historial 24h').first().json;\nconst hourly = $('Tendencia Horaria').all().map(i => i.json);\nconst anomalies = $('Anomalías Recientes').all().map(i => i.json);\n\nconst totalReadings = Number(hist.total_readings) || 0;\nconst avgKwh = Number(hist.avg_kwh) || 0;\nconst maxKwh = Number(hist.max_kwh) || 0;\nconst minKwh = Number(hist.min_kwh) || 0;\nconst stddev = Number(hist.stddev_kwh) || 0;\nconst anomalyCount = Number(hist.anomaly_count) || 0;\n\n// ── Clasificar tipo de patrón ──\nlet patternType = 'normal';\nlet patternDesc = '';\n\n// Consumo anormalmente bajo\nif (avgKwh > 0 && kwh < avgKwh * 0.2) {\n  patternType = 'abnormally_low';\n  patternDesc = `Consumo anormalmente bajo (${kwh.toFixed(2)} kWh vs promedio ${avgKwh.toFixed(2)}). Posible apagado inesperado.`;\n}\n// Patrón sostenido: muchas anomalías en 24h\nelse if (anomalyCount > 5) {\n  patternType = 'sustained';\n  patternDesc = `Patrón sostenido: ${anomalyCount} anomalías en 24h. No es evento puntual, requiere intervención.`;\n}\n// Acelerado: alta desviación con tendencia alcista\nelse if (stddev > 0 && avgKwh > 0 && (kwh - avgKwh) / avgKwh > 0.3) {\n  patternType = 'accelerating';\n  patternDesc = `Tendencia acelerada: lectura ${kwh.toFixed(2)} supera promedio ${avgKwh.toFixed(2)} por >30%. STD: ${stddev.toFixed(2)}.`;\n}\n// Puntual: evento aislado\nelse if (anomalyCount <= 2) {\n  patternType = 'punctual';\n  patternDesc = `Evento puntual: solo ${anomalyCount} anomalías en 24h. Probablemente transitorio.`;\n}\nelse {\n  patternType = 'moderate';\n  patternDesc = `Patrón intermedio: ${anomalyCount} anomalías con variabilidad moderada.`;\n}\n\n// ── Contexto enriquecido para LLM ──\nconst isRecurring = anomalies.length >= 3;\nlet promptAddon = `CONTEXTO HISTÓRICO: ${patternDesc}`;\nif (isRecurring) {\n  promptAddon += ` | ⚠️ ALERTA RECURRENTE: Evento #${anomalies.length} en esta área.`;\n}\nif (patternType === 'abnormally_low') {\n  promptAddon += ' | NOTA: Consumo inusualmente BAJO. Verificar si equipos fueron desconectados.';\n}\n\n// Tendencia horaria resumida\nconst hourlyTrend = hourly.map(h => `${h.hora}: ${h.avg_kwh} kWh`).join(', ');\n\nreturn [{ json: {\n  action: 'diagnosis_complete',\n  area,\n  severity,\n  pattern_type: patternType,\n  pattern_description: patternDesc,\n  history: {\n    readings_24h: totalReadings,\n    avg_kwh: avgKwh,\n    max_kwh: maxKwh,\n    min_kwh: minKwh,\n    stddev: stddev,\n    anomaly_count: anomalyCount\n  },\n  recent_anomalies_count: anomalies.length,\n  is_recurring: isRecurring,\n  should_escalate: ['sustained', 'accelerating'].includes(patternType),\n  enriched_prompt: promptAddon,\n  hourly_trend: hourlyTrend,\n  timestamp: new Date().toISOString()\n} }];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [140, 300],
+      "id": "diag-classify-id",
+      "name": "Clasificar Patrón"
+    },
+    {
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "INSERT INTO agent_decisions (agent_name, decision_type, area, input_data, output_data, action_taken)\nVALUES ('diagnosis', $1, $2, $3, $4, 'diagnosis_complete');",
+        "options": {
+          "queryReplacement": "={{ [$json.pattern_type, $json.area, JSON.stringify({kwh: $('Webhook Diagnóstico').first().json.body?.kwh || $('Webhook Diagnóstico').first().json.kwh, severity: $json.severity}), JSON.stringify({pattern: $json.pattern_type, anomalies: $json.recent_anomalies_count, recurring: $json.is_recurring})] }}"
+        }
+      },
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.6,
+      "position": [380, 400],
+      "alwaysOutputData": true,
+      "id": "diag-log-id",
+      "name": "Log Diagnóstico",
+      "credentials": {
+        "postgres": {
+          "id": "I7MdTzT2OpsQLA7O",
+          "name": "Postgres account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "// Respuesta final del agente diagnóstico\nconst data = $('Clasificar Patrón').first().json;\nreturn [{ json: data }];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [600, 300],
+      "id": "diag-response-id",
+      "name": "Respuesta Diagnóstico"
+    },
+    {
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "={{ JSON.stringify({status: 'accepted', agent: 'diagnosis'}) }}",
+        "options": { "responseCode": 202 }
+      },
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.1,
+      "position": [-600, 500],
+      "id": "diag-respond-id",
+      "name": "Respuesta Rápida Diag"
+    }
+  ],
+  "connections": {
+    "Webhook Diagnóstico": {
+      "main": [[
+        { "node": "Respuesta Rápida Diag", "type": "main", "index": 0 },
+        { "node": "Historial 24h", "type": "main", "index": 0 },
+        { "node": "Tendencia Horaria", "type": "main", "index": 0 },
+        { "node": "Anomalías Recientes", "type": "main", "index": 0 }
+      ]]
+    },
+    "Historial 24h": {
+      "main": [[{ "node": "Unir Datos Diagnóstico", "type": "main", "index": 0 }]]
+    },
+    "Tendencia Horaria": {
+      "main": [[{ "node": "Unir Datos Diagnóstico", "type": "main", "index": 1 }]]
+    },
+    "Unir Datos Diagnóstico": {
+      "main": [[{ "node": "Clasificar Patrón", "type": "main", "index": 0 }]]
+    },
+    "Clasificar Patrón": {
+      "main": [[
+        { "node": "Log Diagnóstico", "type": "main", "index": 0 },
+        { "node": "Respuesta Diagnóstico", "type": "main", "index": 0 }
+      ]]
+    },
+    "Log Diagnóstico": {
+      "main": [[]]
+    }
+  },
+  "active": true,
+  "settings": {
+    "executionOrder": "v2",
+    "callerPolicy": "workflowsFromSameOwner"
+  },
+  "meta": { "templateCredsSetupCompleted": true },
+  "tags": [{ "name": "agents" }]
+}

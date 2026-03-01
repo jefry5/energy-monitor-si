@@ -1,0 +1,304 @@
+{
+  "id": "wf08",
+  "name": "Agente-Resolucion",
+  "nodes": [
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "agent-resolution",
+        "responseMode": "responseNode",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2,
+      "position": [-600, 300],
+      "id": "res-webhook-id",
+      "name": "Webhook Resolución",
+      "webhookId": "agent-resolution"
+    },
+    {
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "-- Buscar incidentes abiertos para esta área\nSELECT\n  i.id,\n  i.anomalia_id,\n  i.area,\n  i.severidad,\n  i.kwh_al_abrir,\n  i.timestamp_apertura,\n  EXTRACT(EPOCH FROM (NOW() - i.timestamp_apertura)) / 60 as minutos_abierto\nFROM incidentes i\nWHERE i.area = '{{ $json.body.area || $json.area }}'\n  AND i.estado = 'abierto'\nORDER BY i.timestamp_apertura DESC\nLIMIT 1;",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.6,
+      "position": [-380, 300],
+      "alwaysOutputData": true,
+      "id": "res-check-incident-id",
+      "name": "Buscar Incidente Abierto",
+      "credentials": {
+        "postgres": {
+          "id": "I7MdTzT2OpsQLA7O",
+          "name": "Postgres account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "// ═══════════════════════════════════════\n// AGENTE RESOLUCIÓN — Ciclo de Vida de Incidentes\n// ═══════════════════════════════════════\nconst input = $('Webhook Resolución').first().json.body || $('Webhook Resolución').first().json;\nconst area = input.area || 'unknown';\nconst kwh = Number(input.kwh) || 0;\nconst ema = Number(input.ema) || 0;\nconst severity = input.severity || 'Normal';\nconst incidentRow = $('Buscar Incidente Abierto').first().json;\n\nconst RESOLUTION_WINDOW_MIN = 120; // 2 horas\nconst NORMAL_THRESHOLD = 0.20; // Dentro del 20% de EMA = normal\n\nconst results = [];\n\n// ── Verificar incidente existente ──\nif (incidentRow && incidentRow.id) {\n  const minutesOpen = Number(incidentRow.minutos_abierto) || 0;\n  \n  // ¿Consumo volvió a la normalidad?\n  const isNormal = ema > 0 && Math.abs(kwh - ema) / ema <= NORMAL_THRESHOLD;\n  \n  if (isNormal) {\n    results.push({\n      action: 'close_incident',\n      incident_id: incidentRow.id,\n      anomalia_id: incidentRow.anomalia_id,\n      area,\n      estado: 'auto_resuelto',\n      resolution_time_min: Math.round(minutesOpen),\n      kwh_at_close: kwh\n    });\n  } else if (minutesOpen > RESOLUTION_WINDOW_MIN) {\n    results.push({\n      action: 'escalate_incident',\n      incident_id: incidentRow.id,\n      anomalia_id: incidentRow.anomalia_id,\n      area,\n      hours_open: (minutesOpen / 60).toFixed(1),\n      send_escalation: true\n    });\n  } else {\n    results.push({\n      action: 'monitoring',\n      incident_id: incidentRow.id,\n      area,\n      minutes_open: Math.round(minutesOpen),\n      remaining_min: Math.round(RESOLUTION_WINDOW_MIN - minutesOpen)\n    });\n  }\n}\n\n// ── Abrir nuevo incidente para Crítico sin incidente activo ──\nif (severity === 'Critico' && !(incidentRow && incidentRow.id)) {\n  results.push({\n    action: 'open_incident',\n    area,\n    severity,\n    kwh_at_open: kwh\n  });\n}\n\nif (results.length === 0) {\n  return [{ json: {\n    action: 'no_change',\n    area,\n    open_incident: !!(incidentRow && incidentRow.id)\n  } }];\n}\n\n// Tomar la acción principal (primera)\nconst primary = results[0];\nreturn [{ json: {\n  ...primary,\n  all_results: results,\n  timestamp: new Date().toISOString()\n} }];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [-100, 300],
+      "id": "res-evaluate-id",
+      "name": "Evaluar Resolución"
+    },
+    {
+      "parameters": {
+        "rules": {
+          "values": [
+            {
+              "conditions": {
+                "options": { "caseSensitive": false, "typeValidation": "strict", "version": 3 },
+                "conditions": [
+                  { "id": "ra1", "leftValue": "={{ $json.action }}", "rightValue": "open_incident", "operator": { "type": "string", "operation": "equals" } }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "Abrir"
+            },
+            {
+              "conditions": {
+                "options": { "caseSensitive": false, "typeValidation": "strict", "version": 3 },
+                "conditions": [
+                  { "id": "ra2", "leftValue": "={{ $json.action }}", "rightValue": "close_incident", "operator": { "type": "string", "operation": "equals" } }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "Cerrar"
+            },
+            {
+              "conditions": {
+                "options": { "caseSensitive": false, "typeValidation": "strict", "version": 3 },
+                "conditions": [
+                  { "id": "ra3", "leftValue": "={{ $json.action }}", "rightValue": "escalate_incident", "operator": { "type": "string", "operation": "equals" } }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "Escalar"
+            },
+            {
+              "conditions": {
+                "options": { "caseSensitive": false, "typeValidation": "strict", "version": 3 },
+                "conditions": [
+                  { "id": "ra4", "leftValue": "={{ $json.action }}", "rightValue": "open_incident|close_incident|escalate_incident", "operator": { "type": "string", "operation": "notRegex" } }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "Sin Cambio"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.switch",
+      "typeVersion": 3.4,
+      "position": [140, 300],
+      "id": "res-switch-action-id",
+      "name": "Switch Acción"
+    },
+    {
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "INSERT INTO incidentes (anomalia_id, area, severidad, kwh_al_abrir)\nVALUES (NULL, $1, $2, $3)\nRETURNING id;",
+        "options": {
+          "queryReplacement": "={{ [$json.area, $json.severity, $json.kwh_at_open] }}"
+        }
+      },
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.6,
+      "position": [400, 100],
+      "alwaysOutputData": true,
+      "id": "res-open-db-id",
+      "name": "Abrir Incidente DB",
+      "credentials": {
+        "postgres": {
+          "id": "I7MdTzT2OpsQLA7O",
+          "name": "Postgres account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "UPDATE incidentes\nSET timestamp_cierre = NOW(),\n    estado = 'resuelto',\n    kwh_al_cerrar = $1,\n    resolucion_automatica = TRUE\nWHERE id = $2;\n\nUPDATE anomalias\nSET accion_tomada = 'auto_resuelto', resuelto_en = NOW()\nWHERE id = $3;",
+        "options": {
+          "queryReplacement": "={{ [$json.kwh_at_close, $json.incident_id, $json.anomalia_id] }}"
+        }
+      },
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.6,
+      "position": [400, 300],
+      "alwaysOutputData": true,
+      "id": "res-close-db-id",
+      "name": "Cerrar Incidente DB",
+      "credentials": {
+        "postgres": {
+          "id": "I7MdTzT2OpsQLA7O",
+          "name": "Postgres account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "=https://api.telegram.org/bot{{ $env.TELEGRAM_TOKEN }}/sendMessage",
+        "sendBody": true,
+        "bodyParameters": {
+          "parameters": [
+            { "name": "chat_id", "value": "={{ $env.TELEGRAM_CHAT_ID }}" },
+            { "name": "parse_mode", "value": "HTML" },
+            { "name": "text", "value": "=✅ <b>INCIDENTE RESUELTO AUTOMÁTICAMENTE</b>\n━━━━━━━━━━━━━━━━━━━━\n📍 Área: <b>{{ $('Evaluar Resolución').first().json.area }}</b>\n⏱ Tiempo de resolución: <b>{{ $('Evaluar Resolución').first().json.resolution_time_min }} min</b>\n📊 kWh al cerrar: {{ $('Evaluar Resolución').first().json.kwh_at_close }}\n\n🤖 <i>El consumo volvió a niveles normales</i>" }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.4,
+      "position": [640, 300],
+      "id": "res-telegram-resolved-id",
+      "name": "Notificar Resolución"
+    },
+    {
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "UPDATE incidentes SET estado = 'escalado' WHERE id = $1;\nUPDATE anomalias SET accion_tomada = 'escalado' WHERE id = $2;",
+        "options": {
+          "queryReplacement": "={{ [$json.incident_id, $json.anomalia_id] }}"
+        }
+      },
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.6,
+      "position": [400, 500],
+      "alwaysOutputData": true,
+      "id": "res-escalate-db-id",
+      "name": "Escalar Incidente DB",
+      "credentials": {
+        "postgres": {
+          "id": "I7MdTzT2OpsQLA7O",
+          "name": "Postgres account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "=https://api.telegram.org/bot{{ $env.TELEGRAM_TOKEN }}/sendMessage",
+        "sendBody": true,
+        "bodyParameters": {
+          "parameters": [
+            { "name": "chat_id", "value": "={{ $env.TELEGRAM_CHAT_ID }}" },
+            { "name": "parse_mode", "value": "HTML" },
+            { "name": "text", "value": "=🚨 <b>ESCALAMIENTO DE INCIDENTE</b>\n━━━━━━━━━━━━━━━━━━━━\n📍 Área: <b>{{ $('Evaluar Resolución').first().json.area }}</b>\n⏰ Tiempo abierto: <b>{{ $('Evaluar Resolución').first().json.hours_open }}h</b>\n\n⚠️ El consumo NO ha vuelto a niveles normales.\nSe requiere <b>intervención manual</b>." },
+            { "name": "reply_markup", "value": "={{ JSON.stringify({ inline_keyboard: [[{text:'🔴 Cortar Energía', callback_data:'cut_' + $('Evaluar Resolución').first().json.area}, {text:'✅ Marcar Resuelto', callback_data:'feedback_resuelto_' + $('Evaluar Resolución').first().json.area}]] }) }}" }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.4,
+      "position": [640, 500],
+      "id": "res-telegram-escalated-id",
+      "name": "Notificar Escalamiento"
+    },
+    {
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "INSERT INTO agent_decisions (agent_name, decision_type, area, output_data, action_taken)\nVALUES ('resolution', $1, $2, $3, $4);",
+        "options": {
+          "queryReplacement": "={{ [$json.action, $json.area, JSON.stringify({incident_id: $json.incident_id, resolution_min: $json.resolution_time_min, hours_open: $json.hours_open}), $json.action] }}"
+        }
+      },
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.6,
+      "position": [400, 700],
+      "alwaysOutputData": true,
+      "id": "res-log-id",
+      "name": "Log Resolución",
+      "credentials": {
+        "postgres": {
+          "id": "I7MdTzT2OpsQLA7O",
+          "name": "Postgres account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "const data = $('Evaluar Resolución').first().json;\nreturn [{ json: data }];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [860, 400],
+      "id": "res-response-id",
+      "name": "Respuesta Resolución"
+    },
+    {
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "={{ JSON.stringify({status: 'accepted', agent: 'resolution'}) }}",
+        "options": { "responseCode": 202 }
+      },
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.1,
+      "position": [-600, 500],
+      "id": "resol-respond-id",
+      "name": "Respuesta Rápida Resol"
+    }
+  ],
+  "connections": {
+    "Webhook Resolución": {
+      "main": [[
+        { "node": "Respuesta Rápida Resol", "type": "main", "index": 0 },
+        { "node": "Buscar Incidente Abierto", "type": "main", "index": 0 }
+      ]]
+    },
+    "Buscar Incidente Abierto": {
+      "main": [[{ "node": "Evaluar Resolución", "type": "main", "index": 0 }]]
+    },
+    "Evaluar Resolución": {
+      "main": [[
+        { "node": "Switch Acción", "type": "main", "index": 0 },
+        { "node": "Log Resolución", "type": "main", "index": 0 }
+      ]]
+    },
+    "Switch Acción": {
+      "main": [
+        [{ "node": "Abrir Incidente DB", "type": "main", "index": 0 }],
+        [{ "node": "Cerrar Incidente DB", "type": "main", "index": 0 }],
+        [{ "node": "Escalar Incidente DB", "type": "main", "index": 0 }],
+        [{ "node": "Respuesta Resolución", "type": "main", "index": 0 }]
+      ]
+    },
+    "Abrir Incidente DB": {
+      "main": [[{ "node": "Respuesta Resolución", "type": "main", "index": 0 }]]
+    },
+    "Cerrar Incidente DB": {
+      "main": [[{ "node": "Notificar Resolución", "type": "main", "index": 0 }]]
+    },
+    "Notificar Resolución": {
+      "main": [[{ "node": "Respuesta Resolución", "type": "main", "index": 0 }]]
+    },
+    "Escalar Incidente DB": {
+      "main": [[{ "node": "Notificar Escalamiento", "type": "main", "index": 0 }]]
+    },
+    "Notificar Escalamiento": {
+      "main": [[{ "node": "Respuesta Resolución", "type": "main", "index": 0 }]]
+    },
+    "Log Resolución": {
+      "main": [[]]
+    }
+  },
+  "active": true,
+  "settings": {
+    "executionOrder": "v2",
+    "callerPolicy": "workflowsFromSameOwner"
+  },
+  "meta": { "templateCredsSetupCompleted": true },
+  "tags": [{ "name": "agents" }]
+}

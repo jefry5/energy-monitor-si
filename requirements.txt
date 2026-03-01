@@ -2,6 +2,5 @@ influxdb-client
 python-dotenv
 paho-mqtt
 psycopg2-binary
-google-generativeai
 fastapi
 uvicorn[standard]

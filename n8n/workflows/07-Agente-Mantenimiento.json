@@ -1,0 +1,231 @@
+{
+  "id": "wf07",
+  "name": "Agente-Mantenimiento",
+  "nodes": [
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "agent-maintenance",
+        "responseMode": "responseNode",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2,
+      "position": [-600, 300],
+      "id": "maint-webhook-id",
+      "name": "Webhook Mantenimiento",
+      "webhookId": "agent-maintenance"
+    },
+    {
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "-- Promedios diarios de los últimos 7 días para el área\nSELECT\n  date_trunc('day', timestamp) as dia,\n  ROUND(AVG(reading)::numeric, 4) as avg_reading,\n  ROUND(AVG(ema)::numeric, 4) as avg_ema,\n  COUNT(*) as muestras,\n  ROUND(MAX(reading)::numeric, 4) as max_reading,\n  ROUND(MIN(reading)::numeric, 4) as min_reading\nFROM energy_history\nWHERE area = '{{ $json.body.area || $json.area }}'\n  AND timestamp > NOW() - INTERVAL '7 days'\nGROUP BY dia\nORDER BY dia ASC;",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.6,
+      "position": [-380, 300],
+      "alwaysOutputData": true,
+      "id": "maint-weekly-data-id",
+      "name": "Tendencia Semanal",
+      "credentials": {
+        "postgres": {
+          "id": "I7MdTzT2OpsQLA7O",
+          "name": "Postgres account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "-- Verificar si ya existe orden de mantenimiento reciente para esta área\nSELECT id, timestamp, prioridad\nFROM mantenimiento_preventivo\nWHERE area = '{{ $('Webhook Mantenimiento').first().json.body.area || $('Webhook Mantenimiento').first().json.area }}'\n  AND timestamp > NOW() - INTERVAL '7 days'\n  AND estado = 'pendiente'\nLIMIT 1;",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.6,
+      "position": [-380, 500],
+      "alwaysOutputData": true,
+      "id": "maint-existing-check-id",
+      "name": "Verificar Orden Existente",
+      "credentials": {
+        "postgres": {
+          "id": "I7MdTzT2OpsQLA7O",
+          "name": "Postgres account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "// ═══════════════════════════════════════\n// AGENTE MANTENIMIENTO — Detección de Degradación Gradual\n// ═══════════════════════════════════════\nconst input = $('Webhook Mantenimiento').first().json.body || $('Webhook Mantenimiento').first().json;\nconst area = input.area || 'unknown';\nconst dailyData = $('Tendencia Semanal').all().map(i => i.json);\nconst existingOrder = $('Verificar Orden Existente').first().json;\n\nconst MIN_GROWTH_PCT = 1.5;\nconst MIN_DAYS = 5;\nconst MAX_SPIKE_PCT = 50;\n\n// Si ya existe orden pendiente, skip\nif (existingOrder && existingOrder.id) {\n  return [{ json: {\n    action: 'existing_order',\n    area,\n    order_id: existingOrder.id,\n    priority: existingOrder.prioridad,\n    save_order: false\n  } }];\n}\n\n// Datos insuficientes\nif (!dailyData || dailyData.length < 3) {\n  return [{ json: {\n    action: 'insufficient_data',\n    area,\n    days_available: dailyData ? dailyData.length : 0,\n    save_order: false\n  } }];\n}\n\n// ── Calcular crecimiento diario ──\nconst growths = [];\nfor (let i = 1; i < dailyData.length; i++) {\n  const prev = Number(dailyData[i-1].avg_reading);\n  const curr = Number(dailyData[i].avg_reading);\n  const pctChange = prev > 0 ? ((curr - prev) / prev) * 100 : 0;\n  growths.push(pctChange);\n}\n\n// Verificar spikes (salto >50% = no es degradación gradual)\nconst hasSpike = growths.some(g => Math.abs(g) > MAX_SPIKE_PCT);\nif (hasSpike) {\n  return [{ json: {\n    action: 'spike_detected',\n    area,\n    reason: 'Detectado spike >50%, no es degradación gradual',\n    growths: growths.map(g => Math.round(g * 100) / 100),\n    save_order: false\n  } }];\n}\n\n// Contar días con crecimiento positivo sostenido\nconst positiveDays = growths.filter(g => g >= MIN_GROWTH_PCT).length;\nconst avgGrowth = growths.reduce((s, g) => s + g, 0) / growths.length;\n\nconst isDegrading = positiveDays >= Math.min(MIN_DAYS, growths.length) && avgGrowth >= MIN_GROWTH_PCT;\n\nif (!isDegrading) {\n  return [{ json: {\n    action: 'trend_normal',\n    area,\n    avg_daily_growth_pct: Math.round(avgGrowth * 100) / 100,\n    days_analyzed: dailyData.length,\n    save_order: false\n  } }];\n}\n\n// ── Determinar prioridad ──\nlet priority = 'baja';\nif (avgGrowth >= 5.0) priority = 'urgente';\nelse if (avgGrowth >= 3.0) priority = 'alta';\nelse if (avgGrowth >= 2.0) priority = 'media';\n\nconst emaStart = Number(dailyData[0].avg_ema) || 0;\nconst emaCurrent = Number(dailyData[dailyData.length - 1].avg_ema) || 0;\n\nconst prioEmoji = { urgente: '🔴', alta: '🟠', media: '🟡', baja: '🟢' };\n\nconst message = `🔧 <b>MANTENIMIENTO PREVENTIVO</b>\\n` +\n  `${prioEmoji[priority] || '🟡'} Prioridad: <b>${priority.toUpperCase()}</b>\\n` +\n  `📍 Área: <b>${area}</b>\\n` +\n  `📈 Tendencia: +${avgGrowth.toFixed(1)}% diario durante ${positiveDays} días\\n` +\n  `📊 EMA: ${emaStart.toFixed(2)} → ${emaCurrent.toFixed(2)}\\n\\n` +\n  `💡 Inspección preventiva recomendada antes de anomalía crítica.`;\n\nreturn [{ json: {\n  action: 'preventive_maintenance',\n  area,\n  avg_daily_growth_pct: Math.round(avgGrowth * 100) / 100,\n  positive_growth_days: positiveDays,\n  total_days: dailyData.length,\n  ema_start: emaStart,\n  ema_current: emaCurrent,\n  priority,\n  message,\n  save_order: true,\n  recomendacion: `Incremento sostenido de ${avgGrowth.toFixed(1)}% diario durante ${positiveDays} días. Revisar instalación eléctrica de ${area}.`,\n  timestamp: new Date().toISOString()\n} }];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [-60, 400],
+      "id": "maint-analyze-id",
+      "name": "Analizar Tendencia"
+    },
+    {
+      "parameters": {
+        "rules": {
+          "values": [
+            {
+              "conditions": {
+                "options": { "caseSensitive": false, "typeValidation": "strict", "version": 3 },
+                "conditions": [
+                  { "id": "ms1", "leftValue": "={{ $json.save_order }}", "rightValue": true, "operator": { "type": "boolean", "operation": "equals" } }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "Crear Orden"
+            },
+            {
+              "conditions": {
+                "options": { "caseSensitive": false, "typeValidation": "strict", "version": 3 },
+                "conditions": [
+                  { "id": "ms2", "leftValue": "={{ !$json.save_order }}", "rightValue": true, "operator": { "type": "boolean", "operation": "equals" } }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "Sin Acción"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.switch",
+      "typeVersion": 3.4,
+      "position": [200, 400],
+      "id": "maint-switch-id",
+      "name": "¿Crear Orden?"
+    },
+    {
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "INSERT INTO mantenimiento_preventivo\n  (area, tipo, tendencia_diaria_pct, dias_detectados, ema_inicio, ema_actual, prioridad, recomendacion)\nVALUES ($1, 'degradacion_gradual', $2, $3, $4, $5, $6, $7)\nRETURNING id;",
+        "options": {
+          "queryReplacement": "={{ [$json.area, $json.avg_daily_growth_pct, $json.positive_growth_days, $json.ema_start, $json.ema_current, $json.priority, $json.recomendacion] }}"
+        }
+      },
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.6,
+      "position": [440, 300],
+      "alwaysOutputData": true,
+      "id": "maint-save-order-id",
+      "name": "Guardar Orden Mant.",
+      "credentials": {
+        "postgres": {
+          "id": "I7MdTzT2OpsQLA7O",
+          "name": "Postgres account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "=https://api.telegram.org/bot{{ $env.TELEGRAM_TOKEN }}/sendMessage",
+        "sendBody": true,
+        "bodyParameters": {
+          "parameters": [
+            { "name": "chat_id", "value": "={{ $env.TELEGRAM_CHAT_ID }}" },
+            { "name": "parse_mode", "value": "HTML" },
+            { "name": "text", "value": "={{ $('Analizar Tendencia').first().json.message }}" }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.4,
+      "position": [660, 300],
+      "id": "maint-telegram-id",
+      "name": "Alerta Mantenimiento Telegram"
+    },
+    {
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "INSERT INTO agent_decisions (agent_name, decision_type, area, output_data, action_taken)\nVALUES ('maintenance', $1, $2, $3, $4);",
+        "options": {
+          "queryReplacement": "={{ [$json.action, $json.area, JSON.stringify({growth: $json.avg_daily_growth_pct, days: $json.positive_growth_days, priority: $json.priority}), $json.action] }}"
+        }
+      },
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.6,
+      "position": [440, 550],
+      "alwaysOutputData": true,
+      "id": "maint-log-id",
+      "name": "Log Mantenimiento",
+      "credentials": {
+        "postgres": {
+          "id": "I7MdTzT2OpsQLA7O",
+          "name": "Postgres account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "const data = $('Analizar Tendencia').first().json;\nreturn [{ json: data }];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [660, 550],
+      "id": "maint-response-id",
+      "name": "Respuesta Mantenimiento"
+    },
+    {
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "={{ JSON.stringify({status: 'accepted', agent: 'maintenance'}) }}",
+        "options": { "responseCode": 202 }
+      },
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.1,
+      "position": [-600, 500],
+      "id": "maint-respond-id",
+      "name": "Respuesta Rápida Maint"
+    }
+  ],
+  "connections": {
+    "Webhook Mantenimiento": {
+      "main": [[
+        { "node": "Respuesta Rápida Maint", "type": "main", "index": 0 },
+        { "node": "Tendencia Semanal", "type": "main", "index": 0 },
+        { "node": "Verificar Orden Existente", "type": "main", "index": 0 }
+      ]]
+    },
+    "Tendencia Semanal": {
+      "main": [[{ "node": "Analizar Tendencia", "type": "main", "index": 0 }]]
+    },
+    "Verificar Orden Existente": {
+      "main": [[{ "node": "Analizar Tendencia", "type": "main", "index": 0 }]]
+    },
+    "Analizar Tendencia": {
+      "main": [[
+        { "node": "¿Crear Orden?", "type": "main", "index": 0 },
+        { "node": "Log Mantenimiento", "type": "main", "index": 0 }
+      ]]
+    },
+    "¿Crear Orden?": {
+      "main": [
+        [{ "node": "Guardar Orden Mant.", "type": "main", "index": 0 }],
+        [{ "node": "Respuesta Mantenimiento", "type": "main", "index": 0 }]
+      ]
+    },
+    "Guardar Orden Mant.": {
+      "main": [[{ "node": "Alerta Mantenimiento Telegram", "type": "main", "index": 0 }]]
+    },
+    "Alerta Mantenimiento Telegram": {
+      "main": [[{ "node": "Respuesta Mantenimiento", "type": "main", "index": 0 }]]
+    },
+    "Log Mantenimiento": {
+      "main": [[]]
+    }
+  },
+  "active": true,
+  "settings": {
+    "executionOrder": "v2",
+    "callerPolicy": "workflowsFromSameOwner"
+  },
+  "meta": { "templateCredsSetupCompleted": true },
+  "tags": [{ "name": "agents" }]
+}

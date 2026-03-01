@@ -1,0 +1,308 @@
+{
+  "id": "wf04",
+  "name": "Agente-Orquestador",
+  "nodes": [
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "agent-orchestrator",
+        "responseMode": "responseNode",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2,
+      "position": [-600, 300],
+      "id": "orch-webhook-id",
+      "name": "Webhook Orquestador",
+      "webhookId": "agent-orchestrator"
+    },
+    {
+      "parameters": {
+        "jsCode": "// ═══════════════════════════════════════\n// AGENTE ORQUESTADOR — Deduplicación y Routing\n// ═══════════════════════════════════════\nconst input = $input.first().json.body || $input.first().json;\nconst area = input.area || 'unknown';\nconst severity = input.severidad || input.severity || 'Normal';\nconst kwh = Number(input.kwh) || 0;\nconst ema = Number(input.ema) || 0;\nconst desviacion = Number(input.desviacion) || 0;\nconst timestamp = input.timestamp || new Date().toISOString();\nconst relay_state = input.relay_state || 'ENCENDIDO';\n\n// ── Dedup key: area + severity rounded to 5-min window ──\nconst windowMs = 5 * 60 * 1000;\nconst windowKey = Math.floor(Date.now() / windowMs);\nconst dedupKey = `${area}_${severity}_${windowKey}`;\n\n// ── Which agents to invoke ──\nconst agents = [];\nconst actions = [];\nlet skipReason = '';\n\n// Si el relé está apagado, no analizar\nif (relay_state === 'APAGADO') {\n  skipReason = 'Relay OFF — area sin energía';\n} else {\n  // Siempre correr diagnóstico para no-Normal\n  if (severity === 'Critico' || severity === 'Advertencia') {\n    agents.push('diagnosis');\n    actions.push('deep_diagnosis');\n  }\n  // Crítico → correlación + resolución\n  if (severity === 'Critico') {\n    agents.push('correlation');\n    agents.push('resolution');\n    actions.push('check_cross_area');\n    actions.push('open_incident');\n  }\n  // Siempre mantenimiento (es liviano)\n  agents.push('maintenance');\n  actions.push('check_trends');\n}\n\nreturn [{\n  json: {\n    area,\n    kwh,\n    ema,\n    desviacion,\n    severity,\n    timestamp,\n    relay_state,\n    dedup_key: dedupKey,\n    skip: !!skipReason,\n    skip_reason: skipReason,\n    agents_to_invoke: agents,\n    actions,\n    invoke_diagnosis: agents.includes('diagnosis'),\n    invoke_correlation: agents.includes('correlation'),\n    invoke_resolution: agents.includes('resolution'),\n    invoke_maintenance: agents.includes('maintenance')\n  }\n}];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [-380, 300],
+      "id": "orch-logic-id",
+      "name": "Lógica Orquestador"
+    },
+    {
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "-- Deduplicación: verificar si ya procesamos esta alerta\nSELECT id, timestamp FROM alert_history\nWHERE dedup_key = '{{ $json.dedup_key }}'\n  AND timestamp > NOW() - INTERVAL '5 minutes'\nLIMIT 1;",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.6,
+      "position": [-160, 300],
+      "alwaysOutputData": true,
+      "id": "orch-dedup-check-id",
+      "name": "Verificar Dedup",
+      "credentials": {
+        "postgres": {
+          "id": "I7MdTzT2OpsQLA7O",
+          "name": "Postgres account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "const orchData = $('Lógica Orquestador').first().json;\nlet dedupResult = null;\ntry { dedupResult = $input.first().json; } catch(e) { dedupResult = {}; }\n\n// Si encontró registro reciente → deduplicado\nconst isDuplicate = dedupResult && dedupResult.id;\n\nif (isDuplicate) {\n  return [{ json: { ...orchData, deduplicated: true, action: 'deduplicated', reason: `Alerta duplicada (ID: ${dedupResult.id})` } }];\n}\n\nreturn [{ json: { ...orchData, deduplicated: false, action: orchData.skip ? 'skip' : 'dispatch' } }];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [60, 300],
+      "id": "orch-eval-dedup-id",
+      "name": "Evaluar Dedup"
+    },
+    {
+      "parameters": {
+        "rules": {
+          "values": [
+            {
+              "conditions": {
+                "options": { "caseSensitive": false, "typeValidation": "strict", "version": 3 },
+                "conditions": [
+                  { "id": "od1", "leftValue": "={{ $json.action }}", "rightValue": "dispatch", "operator": { "type": "string", "operation": "equals" } }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "Dispatch"
+            },
+            {
+              "conditions": {
+                "options": { "caseSensitive": false, "typeValidation": "strict", "version": 3 },
+                "conditions": [
+                  { "id": "od2", "leftValue": "={{ $json.action }}", "rightValue": "dispatch", "operator": { "type": "string", "operation": "notEquals" } }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "Skip"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.switch",
+      "typeVersion": 3.4,
+      "position": [280, 300],
+      "id": "orch-switch-dispatch-id",
+      "name": "Switch Dispatch"
+    },
+    {
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "INSERT INTO alert_history (area, tipo_alerta, hash_contenido, severidad, kwh, dedup_key)\nVALUES ('{{ $json.area }}', '{{ $json.severity }}', '{{ $json.dedup_key }}', '{{ $json.severity }}', {{ $json.kwh }}, '{{ $json.dedup_key }}')\nON CONFLICT (dedup_key) DO UPDATE SET timestamp = NOW();\n\nINSERT INTO agent_decisions (agent_name, decision_type, area, action_taken)\nVALUES ('orchestrator', '{{ $json.action }}', '{{ $json.area }}', '{{ $json.action }}');",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.6,
+      "position": [500, 200],
+      "id": "orch-save-dedup-id",
+      "name": "Guardar Dedup Key",
+      "credentials": {
+        "postgres": {
+          "id": "I7MdTzT2OpsQLA7O",
+          "name": "Postgres account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "INSERT INTO agent_decisions (agent_name, decision_type, area, action_taken)\nVALUES ('orchestrator', '{{ $json.action }}', '{{ $json.area }}', '{{ $json.action }}');",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.6,
+      "position": [500, 400],
+      "id": "orch-log-decision-id",
+      "name": "Log Decision",
+      "credentials": {
+        "postgres": {
+          "id": "I7MdTzT2OpsQLA7O",
+          "name": "Postgres account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "// Preparar payload para sub-workflows (agentes especialistas)\nconst data = $('Evaluar Dedup').first().json;\n\nconst basePayload = {\n  area: data.area,\n  kwh: data.kwh,\n  ema: data.ema,\n  desviacion: data.desviacion,\n  severity: data.severity,\n  timestamp: data.timestamp,\n  dedup_key: data.dedup_key\n};\n\nreturn [{ json: {\n  ...basePayload,\n  agents_to_invoke: data.agents_to_invoke,\n  invoke_diagnosis: data.invoke_diagnosis,\n  invoke_correlation: data.invoke_correlation,\n  invoke_resolution: data.invoke_resolution,\n  invoke_maintenance: data.invoke_maintenance\n} }];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [720, 300],
+      "id": "orch-prepare-dispatch-id",
+      "name": "Preparar Dispatch"
+    },
+    {
+      "parameters": {
+        "url": "={{ $env.N8N_WEBHOOK_URL || 'http://n8n:5678' }}/webhook/agent-diagnosis",
+        "method": "POST",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ JSON.stringify($json) }}",
+        "options": { "timeout": 30000 }
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.4,
+      "position": [960, 100],
+      "id": "orch-call-diagnosis-id",
+      "name": "Llamar Diagnóstico"
+    },
+    {
+      "parameters": {
+        "url": "={{ $env.N8N_WEBHOOK_URL || 'http://n8n:5678' }}/webhook/agent-correlation",
+        "method": "POST",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ JSON.stringify($json) }}",
+        "options": { "timeout": 30000 }
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.4,
+      "position": [960, 300],
+      "id": "orch-call-correlation-id",
+      "name": "Llamar Correlación"
+    },
+    {
+      "parameters": {
+        "url": "={{ $env.N8N_WEBHOOK_URL || 'http://n8n:5678' }}/webhook/agent-resolution",
+        "method": "POST",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ JSON.stringify($json) }}",
+        "options": { "timeout": 30000 }
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.4,
+      "position": [960, 500],
+      "id": "orch-call-resolution-id",
+      "name": "Llamar Resolución"
+    },
+    {
+      "parameters": {
+        "url": "={{ $env.N8N_WEBHOOK_URL || 'http://n8n:5678' }}/webhook/agent-maintenance",
+        "method": "POST",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ JSON.stringify($json) }}",
+        "options": { "timeout": 30000 }
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.4,
+      "position": [960, 700],
+      "id": "orch-call-maintenance-id",
+      "name": "Llamar Mantenimiento"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": { "caseSensitive": false, "typeValidation": "strict", "version": 3 },
+          "conditions": [
+            { "id": "if-diag", "leftValue": "={{ $json.invoke_diagnosis }}", "rightValue": true, "operator": { "type": "boolean", "operation": "equals" } }
+          ],
+          "combinator": "and"
+        }
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2,
+      "position": [960, -100],
+      "id": "orch-if-diag-id",
+      "name": "¿Diagnóstico?"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": { "caseSensitive": false, "typeValidation": "strict", "version": 3 },
+          "conditions": [
+            { "id": "if-corr", "leftValue": "={{ $json.invoke_correlation }}", "rightValue": true, "operator": { "type": "boolean", "operation": "equals" } }
+          ],
+          "combinator": "and"
+        }
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2,
+      "position": [960, 200],
+      "id": "orch-if-corr-id",
+      "name": "¿Correlación?"
+    },
+    {
+      "parameters": {
+        "jsCode": "// Respuesta final del orquestador\nconst data = $('Evaluar Dedup').first().json;\nreturn [{ json: {\n  action: data.action,\n  area: data.area,\n  severity: data.severity,\n  agents_invoked: data.agents_to_invoke || [],\n  deduplicated: data.deduplicated || false,\n  skip_reason: data.skip_reason || '',\n  timestamp: new Date().toISOString()\n} }];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [1200, 300],
+      "id": "orch-response-id",
+      "name": "Respuesta Orquestador"
+    },
+    {
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "={{ JSON.stringify({ status: 'accepted', area: $json.area || 'unknown', ts: new Date().toISOString() }) }}",
+        "options": { "responseCode": 202 }
+      },
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.1,
+      "position": [-380, 500],
+      "id": "orch-respond-early-id",
+      "name": "Respuesta Inmediata"
+    }
+  ],
+  "connections": {
+    "Webhook Orquestador": {
+      "main": [[{ "node": "Respuesta Inmediata", "type": "main", "index": 0 }, { "node": "Lógica Orquestador", "type": "main", "index": 0 }]]
+    },
+    "Lógica Orquestador": {
+      "main": [[{ "node": "Verificar Dedup", "type": "main", "index": 0 }]]
+    },
+    "Verificar Dedup": {
+      "main": [[{ "node": "Evaluar Dedup", "type": "main", "index": 0 }]]
+    },
+    "Evaluar Dedup": {
+      "main": [[{ "node": "Switch Dispatch", "type": "main", "index": 0 }]]
+    },
+    "Switch Dispatch": {
+      "main": [
+        [
+          { "node": "Guardar Dedup Key", "type": "main", "index": 0 },
+          { "node": "Log Decision", "type": "main", "index": 0 },
+          { "node": "Preparar Dispatch", "type": "main", "index": 0 }
+        ],
+        [
+          { "node": "Respuesta Orquestador", "type": "main", "index": 0 }
+        ]
+      ]
+    },
+    "Preparar Dispatch": {
+      "main": [[
+        { "node": "Llamar Diagnóstico", "type": "main", "index": 0 },
+        { "node": "Llamar Correlación", "type": "main", "index": 0 },
+        { "node": "Llamar Resolución", "type": "main", "index": 0 },
+        { "node": "Llamar Mantenimiento", "type": "main", "index": 0 }
+      ]]
+    },
+    "Llamar Diagnóstico": {
+      "main": [[{ "node": "Respuesta Orquestador", "type": "main", "index": 0 }]]
+    },
+    "Llamar Correlación": {
+      "main": [[{ "node": "Respuesta Orquestador", "type": "main", "index": 0 }]]
+    },
+    "Llamar Resolución": {
+      "main": [[{ "node": "Respuesta Orquestador", "type": "main", "index": 0 }]]
+    },
+    "Llamar Mantenimiento": {
+      "main": [[{ "node": "Respuesta Orquestador", "type": "main", "index": 0 }]]
+    }
+  },
+  "active": true,
+  "settings": {
+    "executionOrder": "v1",
+    "callerPolicy": "workflowsFromSameOwner"
+  },
+  "meta": { "templateCredsSetupCompleted": true },
+  "tags": [{ "name": "agents" }]
+}

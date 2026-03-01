@@ -1,0 +1,231 @@
+{
+  "id": "wf06",
+  "name": "Agente-Correlacion",
+  "nodes": [
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "agent-correlation",
+        "responseMode": "responseNode",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2,
+      "position": [-600, 300],
+      "id": "corr-webhook-id",
+      "name": "Webhook Correlación",
+      "webhookId": "agent-correlation"
+    },
+    {
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "-- Anomalías en los últimos 5 minutos (ventana de correlación)\nSELECT\n  a.area,\n  a.severidad,\n  a.valor_kwh,\n  a.ema_kwh,\n  a.desviacion,\n  a.timestamp\nFROM anomalias a\nWHERE a.timestamp > NOW() - INTERVAL '5 minutes'\nORDER BY a.timestamp DESC;",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.6,
+      "position": [-380, 300],
+      "alwaysOutputData": true,
+      "id": "corr-recent-anomalies-id",
+      "name": "Anomalías Ventana 5min",
+      "credentials": {
+        "postgres": {
+          "id": "I7MdTzT2OpsQLA7O",
+          "name": "Postgres account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "-- Verificar cooldown de correlación (no alertar si ya alertamos hace <10min)\nSELECT id, timestamp\nFROM correlaciones\nWHERE timestamp > NOW() - INTERVAL '10 minutes'\nORDER BY timestamp DESC LIMIT 1;",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.6,
+      "position": [-380, 500],
+      "alwaysOutputData": true,
+      "id": "corr-cooldown-check-id",
+      "name": "Verificar Cooldown",
+      "credentials": {
+        "postgres": {
+          "id": "I7MdTzT2OpsQLA7O",
+          "name": "Postgres account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "// ═══════════════════════════════════════\n// AGENTE CORRELACIÓN — Detección Cross-Area\n// ═══════════════════════════════════════\nconst input = $('Webhook Correlación').first().json.body || $('Webhook Correlación').first().json;\nconst anomalies = $('Anomalías Ventana 5min').all().map(i => i.json);\nconst cooldown = $('Verificar Cooldown').first().json;\n\nconst THRESHOLD = 3; // Mínimo áreas para alerta consolidada\nconst area = input.area || 'unknown';\n\n// Si hay cooldown activo, skip\nif (cooldown && cooldown.id) {\n  return [{ json: {\n    action: 'cooldown_active',\n    correlated: false,\n    area,\n    reason: 'Alerta de correlación reciente, cooldown activo'\n  } }];\n}\n\n// Agrupar anomalías por área\nconst areaMap = {};\nfor (const a of anomalies) {\n  if (!areaMap[a.area]) areaMap[a.area] = [];\n  areaMap[a.area].push(a);\n}\n\nconst uniqueAreas = Object.keys(areaMap);\nconst isCorrelated = uniqueAreas.length >= THRESHOLD;\n\nif (!isCorrelated) {\n  return [{ json: {\n    action: 'individual_alert',\n    correlated: false,\n    areas_in_window: uniqueAreas.length,\n    threshold: THRESHOLD,\n    area\n  } }];\n}\n\n// ── Inferir causa probable ──\nconst hour = new Date().getHours();\nconst isNight = hour >= 22 || hour < 6;\nlet probableCause = 'anomalia_correlacionada_multiples_areas';\n\nif (uniqueAreas.length >= 6) {\n  probableCause = 'posible_falla_suministro_general';\n} else if (uniqueAreas.includes('sala_servidores') && isNight) {\n  probableCause = 'posible_backup_programado_noches';\n} else {\n  // Verificar pisos adyacentes\n  const floorMap = {\n    laboratorio_computo: 2, aulas_teoricas: 1, biblioteca: 3,\n    cafeteria: 1, oficinas_admin: 4, sala_servidores: 2,\n    estacionamiento: 0, auditorio: 1, gimnasio: 1, laboratorio_quimica: 3\n  };\n  const floors = [...new Set(uniqueAreas.map(a => floorMap[a]).filter(f => f !== undefined))];\n  if (floors.length <= 2) {\n    probableCause = `posible_problema_electrico_pisos_${floors.sort().join('_')}`;\n  }\n}\n\n// Peor severidad\nconst hasCritical = anomalies.some(a => a.severidad === 'Critico');\nconst worstSeverity = hasCritical ? 'Critico' : 'Advertencia';\n\n// Preparar detalle de áreas\nconst areaDetails = uniqueAreas.map(a => {\n  const worst = areaMap[a].reduce((w, x) => Number(x.valor_kwh) > Number(w.valor_kwh) ? x : w, areaMap[a][0]);\n  return { area: a, kwh: Number(worst.valor_kwh).toFixed(2), severity: worst.severidad };\n});\n\nconst causeDescriptions = {\n  posible_falla_suministro_general: '🔴 Posible falla en suministro eléctrico general',\n  posible_backup_programado_noches: '🌙 Posible backup programado nocturno',\n  anomalia_correlacionada_multiples_areas: '⚠️ Anomalía simultánea en múltiples áreas'\n};\n\nlet message = `🔗 <b>ALERTA CORRELACIONADA</b>\\n`;\nmessage += `📊 Áreas afectadas: <b>${uniqueAreas.length}</b>\\n`;\nmessage += `Causa probable: ${causeDescriptions[probableCause] || probableCause}\\n\\n`;\nareaDetails.forEach(d => {\n  message += `  • ${d.area}: ${d.kwh} kWh [${d.severity}]\\n`;\n});\nmessage += `\\n💡 Revisar sistema eléctrico general, no cada área por separado.`;\n\nreturn [{ json: {\n  action: 'consolidated_alert',\n  correlated: true,\n  areas_affected: uniqueAreas,\n  num_areas: uniqueAreas.length,\n  probable_cause: probableCause,\n  worst_severity: worstSeverity,\n  area_details: areaDetails,\n  message,\n  save_correlation: true,\n  timestamp: new Date().toISOString()\n} }];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [-100, 400],
+      "id": "corr-analyze-id",
+      "name": "Analizar Correlación"
+    },
+    {
+      "parameters": {
+        "rules": {
+          "values": [
+            {
+              "conditions": {
+                "options": { "caseSensitive": false, "typeValidation": "strict", "version": 3 },
+                "conditions": [
+                  { "id": "cs1", "leftValue": "={{ $json.save_correlation }}", "rightValue": true, "operator": { "type": "boolean", "operation": "equals" } }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "Guardar"
+            },
+            {
+              "conditions": {
+                "options": { "caseSensitive": false, "typeValidation": "strict", "version": 3 },
+                "conditions": [
+                  { "id": "cs2", "leftValue": "={{ !$json.save_correlation }}", "rightValue": true, "operator": { "type": "boolean", "operation": "equals" } }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "NoGuardar"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.switch",
+      "typeVersion": 3.4,
+      "position": [140, 400],
+      "id": "corr-switch-save-id",
+      "name": "¿Guardar Correlación?"
+    },
+    {
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "INSERT INTO correlaciones (areas, tipo, descripcion, severidad_consolidada)\nVALUES ($1, $2, $3, $4)\nRETURNING id;",
+        "options": {
+          "queryReplacement": "={{ [$json.areas_affected, $json.probable_cause, `Anomalía correlacionada en ${$json.num_areas} áreas: ${$json.areas_affected.join(', ')}`, $json.worst_severity] }}"
+        }
+      },
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.6,
+      "position": [380, 300],
+      "alwaysOutputData": true,
+      "id": "corr-save-db-id",
+      "name": "Guardar Correlación DB",
+      "credentials": {
+        "postgres": {
+          "id": "I7MdTzT2OpsQLA7O",
+          "name": "Postgres account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "=https://api.telegram.org/bot{{ $env.TELEGRAM_TOKEN }}/sendMessage",
+        "sendBody": true,
+        "bodyParameters": {
+          "parameters": [
+            { "name": "chat_id", "value": "={{ $env.TELEGRAM_CHAT_ID }}" },
+            { "name": "parse_mode", "value": "HTML" },
+            { "name": "text", "value": "={{ $('Analizar Correlación').first().json.message }}" }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.4,
+      "position": [600, 300],
+      "id": "corr-telegram-id",
+      "name": "Alerta Correlación Telegram"
+    },
+    {
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "INSERT INTO agent_decisions (agent_name, decision_type, area, output_data, action_taken)\nVALUES ('correlation', $1, $2, $3, $4);",
+        "options": {
+          "queryReplacement": "={{ [$json.action, $json.area || $json.areas_affected?.[0] || 'multi', JSON.stringify({correlated: $json.correlated, cause: $json.probable_cause, areas: $json.num_areas}), $json.action] }}"
+        }
+      },
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.6,
+      "position": [380, 550],
+      "alwaysOutputData": true,
+      "id": "corr-log-id",
+      "name": "Log Correlación",
+      "credentials": {
+        "postgres": {
+          "id": "I7MdTzT2OpsQLA7O",
+          "name": "Postgres account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "const data = $('Analizar Correlación').first().json;\nreturn [{ json: data }];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [600, 550],
+      "id": "corr-response-id",
+      "name": "Respuesta Correlación"
+    },
+    {
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "={{ JSON.stringify({status: 'accepted', agent: 'correlation'}) }}",
+        "options": { "responseCode": 202 }
+      },
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.1,
+      "position": [-600, 500],
+      "id": "corr-respond-id",
+      "name": "Respuesta Rápida Corr"
+    }
+  ],
+  "connections": {
+    "Webhook Correlación": {
+      "main": [[
+        { "node": "Respuesta Rápida Corr", "type": "main", "index": 0 },
+        { "node": "Anomalías Ventana 5min", "type": "main", "index": 0 },
+        { "node": "Verificar Cooldown", "type": "main", "index": 0 }
+      ]]
+    },
+    "Anomalías Ventana 5min": {
+      "main": [[{ "node": "Analizar Correlación", "type": "main", "index": 0 }]]
+    },
+    "Verificar Cooldown": {
+      "main": [[{ "node": "Analizar Correlación", "type": "main", "index": 0 }]]
+    },
+    "Analizar Correlación": {
+      "main": [[
+        { "node": "¿Guardar Correlación?", "type": "main", "index": 0 },
+        { "node": "Log Correlación", "type": "main", "index": 0 }
+      ]]
+    },
+    "¿Guardar Correlación?": {
+      "main": [
+        [{ "node": "Guardar Correlación DB", "type": "main", "index": 0 }],
+        [{ "node": "Respuesta Correlación", "type": "main", "index": 0 }]
+      ]
+    },
+    "Guardar Correlación DB": {
+      "main": [[{ "node": "Alerta Correlación Telegram", "type": "main", "index": 0 }]]
+    },
+    "Alerta Correlación Telegram": {
+      "main": [[{ "node": "Respuesta Correlación", "type": "main", "index": 0 }]]
+    },
+    "Log Correlación": {
+      "main": [[]]
+    }
+  },
+  "active": true,
+  "settings": {
+    "executionOrder": "v2",
+    "callerPolicy": "workflowsFromSameOwner"
+  },
+  "meta": { "templateCredsSetupCompleted": true },
+  "tags": [{ "name": "agents" }]
+}

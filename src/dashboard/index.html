@@ -308,6 +308,61 @@
         </main>
     </div>
 
+    <!-- Agent & Relay Control Panels (Full Width Below) -->
+    <div class="max-w-[1600px] mx-auto grid grid-cols-1 lg:grid-cols-2 gap-4 mt-4">
+
+        <!-- Relay Control Panel -->
+        <div class="industrial-card p-6 border-t-2 border-t-neon-red/40">
+            <div class="screw top-1 left-1"></div>
+            <div class="screw top-1 right-1"></div>
+            <h2 class="text-xs font-bold text-slate-400 mb-4 flex items-center gap-2 uppercase tracking-[0.2em]">
+                <span class="w-1 h-3 bg-neon-red"></span>
+                Virtual Relay Control — Actuadores
+            </h2>
+            <div id="relay-panel" class="grid grid-cols-2 md:grid-cols-5 gap-2">
+                <!-- JS injected relay toggles -->
+            </div>
+            <div class="mt-4 flex gap-2">
+                <button id="btn-all-on" class="px-3 py-1.5 border border-neon-green/50 text-neon-green text-[10px] font-mono uppercase hover:bg-neon-green/10 transition-all">POWER_ALL_ON</button>
+                <button id="btn-all-off" class="px-3 py-1.5 border border-neon-red/50 text-neon-red text-[10px] font-mono uppercase hover:bg-neon-red/10 transition-all">EMERGENCY_CUTOFF</button>
+            </div>
+        </div>
+
+        <!-- Agent Status Dashboard -->
+        <div class="industrial-card p-6 border-t-2 border-t-purple-500/40">
+            <div class="screw top-1 left-1"></div>
+            <div class="screw top-1 right-1"></div>
+            <h2 class="text-xs font-bold text-slate-400 mb-4 flex items-center gap-2 uppercase tracking-[0.2em]">
+                <span class="w-1 h-3 bg-purple-500"></span>
+                Agent Intelligence System — Status
+            </h2>
+            <div id="agent-panel" class="grid grid-cols-2 md:grid-cols-3 gap-2">
+                <!-- JS injected agent cards -->
+            </div>
+            <div class="mt-3 pt-3 border-t border-white/5">
+                <div id="agent-summary" class="text-[10px] font-mono text-slate-500 uppercase tracking-widest">
+                    Loading agent system...
+                </div>
+            </div>
+        </div>
+
+    </div>
+
+    <!-- Active Incidents Panel -->
+    <div class="max-w-[1600px] mx-auto mt-4 mb-8">
+        <div class="industrial-card p-6 border-l-2 border-l-neon-orange/40">
+            <div class="screw top-1 left-1"></div>
+            <div class="screw top-1 right-1"></div>
+            <h2 class="text-xs font-bold text-slate-400 mb-4 flex items-center gap-2 uppercase tracking-[0.2em]">
+                <span class="w-1 h-3 bg-neon-orange"></span>
+                Active Incidents & Feedback
+            </h2>
+            <div id="incidents-panel" class="space-y-2">
+                <p class="text-[10px] text-slate-600 font-mono uppercase">No active incidents</p>
+            </div>
+        </div>
+    </div>
+
     <script>
         // DOM Elements
         const areaControls = document.getElementById('area-controls');
@@ -606,7 +661,139 @@
         // Initialize
         fetchConfig().then(() => {
             setupWebSocket();
+            fetchRelayStates();
+            fetchAgentStatus();
+            // Poll agent/relay status every 5s
+            setInterval(fetchRelayStates, 5000);
+            setInterval(fetchAgentStatus, 5000);
         });
+
+        // ──────────────────────────────────────
+        // Relay Control Panel
+        // ──────────────────────────────────────
+        const relayPanel = document.getElementById('relay-panel');
+        const btnAllOn = document.getElementById('btn-all-on');
+        const btnAllOff = document.getElementById('btn-all-off');
+        let relayStates = {};
+
+        async function fetchRelayStates() {
+            try {
+                const res = await fetch('/api/relays');
+                relayStates = await res.json();
+                renderRelayPanel();
+            } catch (e) {
+                logToConsole('Relay fetch error: ' + e, 'error');
+            }
+        }
+
+        function renderRelayPanel() {
+            relayPanel.innerHTML = Object.entries(relayStates).map(([area, info]) => {
+                const isOn = info.estado === 'ENCENDIDO';
+                const borderColor = isOn ? 'border-neon-green/40' : 'border-neon-red/40';
+                const dotColor = isOn ? 'bg-neon-green' : 'bg-neon-red animate-pulse';
+                const stateText = isOn ? 'ON' : 'OFF';
+                const stateColor = isOn ? 'text-neon-green' : 'text-neon-red';
+                const btnText = isOn ? 'CUT' : 'RESTORE';
+                const btnBorder = isOn ? 'border-neon-red/40 text-neon-red hover:bg-neon-red/10' : 'border-neon-green/40 text-neon-green hover:bg-neon-green/10';
+
+                return `
+                    <div class="bg-industrial-dark p-2 border ${borderColor} relative">
+                        <div class="flex items-center gap-1.5 mb-1">
+                            <span class="w-1.5 h-1.5 ${dotColor}"></span>
+                            <span class="text-[9px] font-bold text-slate-500 uppercase tracking-wider truncate">${area.replace(/_/g, ' ')}</span>
+                        </div>
+                        <div class="flex items-center justify-between">
+                            <span class="text-[10px] font-mono font-bold ${stateColor}">${stateText}</span>
+                            <button onclick="toggleRelay('${area}', '${isOn ? 'cortar_energia' : 'restaurar_energia'}')"
+                                class="px-2 py-0.5 border ${btnBorder} text-[8px] font-mono uppercase transition-all">${btnText}</button>
+                        </div>
+                        ${info.motivo ? `<p class="text-[8px] text-slate-600 mt-1 truncate">${info.motivo}</p>` : ''}
+                    </div>`;
+            }).join('');
+        }
+
+        async function toggleRelay(area, accion) {
+            try {
+                await fetch('/api/relays', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ area, accion, motivo: 'Dashboard operator', origen: 'dashboard' })
+                });
+                logToConsole(`⚡ Relay ${accion} → ${area}`, accion.includes('cortar') ? 'error' : 'success');
+                fetchRelayStates();
+            } catch (e) {
+                logToConsole('Relay control error: ' + e, 'error');
+            }
+        }
+
+        btnAllOn?.addEventListener('click', () => toggleRelay('all', 'restaurar_energia'));
+        btnAllOff?.addEventListener('click', () => {
+            if (confirm('¿Cortar energía de TODAS las áreas?')) toggleRelay('all', 'cortar_energia');
+        });
+
+        // ──────────────────────────────────────
+        // Agent Status Dashboard
+        // ──────────────────────────────────────
+        const agentPanel = document.getElementById('agent-panel');
+        const agentSummary = document.getElementById('agent-summary');
+        const incidentsPanel = document.getElementById('incidents-panel');
+
+        const agentMeta = {
+            orchestrator: { icon: '🎯', label: 'Orquestador', color: 'neon-blue' },
+            diagnosis: { icon: '🔬', label: 'Diagnóstico', color: 'purple-400' },
+            correlation: { icon: '🔗', label: 'Correlación', color: 'neon-orange' },
+            maintenance: { icon: '🔧', label: 'Mantenimiento', color: 'yellow-400' },
+            resolution: { icon: '✅', label: 'Resolución', color: 'neon-green' },
+            reports: { icon: '📋', label: 'Reportes', color: 'pink-400' }
+        };
+
+        async function fetchAgentStatus() {
+            try {
+                const res = await fetch('/api/agents');
+                const agents = await res.json();
+                renderAgentPanel(agents);
+            } catch (e) { /* silent */ }
+        }
+
+        function renderAgentPanel(agents) {
+            let totalDecisions = 0;
+            let activeCount = 0;
+
+            agentPanel.innerHTML = Object.entries(agents).map(([name, info]) => {
+                const meta = agentMeta[name] || { icon: '🤖', label: name, color: 'slate-400' };
+                const status = info.status || 'idle';
+                const decisions = info.decisions || 0;
+                totalDecisions += decisions;
+
+                let statusDot = 'bg-slate-600';
+                let statusText = 'IDLE';
+                if (status === 'running') { statusDot = 'bg-neon-green animate-pulse'; statusText = 'ACTIVE'; activeCount++; }
+                else if (status === 'error') { statusDot = 'bg-neon-red'; statusText = 'ERROR'; }
+
+                const lastActive = info.last_active
+                    ? new Date(info.last_active).toLocaleTimeString()
+                    : '—';
+
+                return `
+                    <div class="bg-industrial-dark p-3 border border-white/5">
+                        <div class="flex items-center gap-2 mb-2">
+                            <span class="text-sm">${meta.icon}</span>
+                            <span class="text-[9px] font-bold text-slate-400 uppercase tracking-wider">${meta.label}</span>
+                        </div>
+                        <div class="flex items-center justify-between mb-1">
+                            <div class="flex items-center gap-1.5">
+                                <span class="w-1.5 h-1.5 ${statusDot}"></span>
+                                <span class="text-[9px] font-mono text-slate-500">${statusText}</span>
+                            </div>
+                            <span class="text-[10px] font-mono font-bold text-${meta.color}">${decisions}</span>
+                        </div>
+                        <p class="text-[8px] text-slate-600 font-mono">${lastActive}</p>
+                    </div>`;
+            }).join('');
+
+            agentSummary.textContent =
+                `${Object.keys(agents).length} agents deployed // ${totalDecisions} decisions total // ${activeCount} active`;
+        }
 
     </script>
 </body>
