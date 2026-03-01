@@ -1,5 +1,4 @@
 {
-  "id": "wf07",
   "name": "Agente-Mantenimiento",
   "nodes": [
     {
@@ -11,8 +10,11 @@
       },
       "type": "n8n-nodes-base.webhook",
       "typeVersion": 2,
-      "position": [-600, 300],
-      "id": "maint-webhook-id",
+      "position": [
+        128,
+        160
+      ],
+      "id": "3cb8b522-2035-4bf7-97bf-ec4d4c288fce",
       "name": "Webhook Mantenimiento",
       "webhookId": "agent-maintenance"
     },
@@ -24,13 +26,16 @@
       },
       "type": "n8n-nodes-base.postgres",
       "typeVersion": 2.6,
-      "position": [-380, 300],
+      "position": [
+        352,
+        160
+      ],
       "alwaysOutputData": true,
-      "id": "maint-weekly-data-id",
+      "id": "8ded8032-4ef7-4e2a-956a-a34082674959",
       "name": "Tendencia Semanal",
       "credentials": {
         "postgres": {
-          "id": "I7MdTzT2OpsQLA7O",
+          "id": "95gB8C5UUHd1h0BA",
           "name": "Postgres account"
         }
       }
@@ -43,13 +48,16 @@
       },
       "type": "n8n-nodes-base.postgres",
       "typeVersion": 2.6,
-      "position": [-380, 500],
+      "position": [
+        352,
+        368
+      ],
       "alwaysOutputData": true,
-      "id": "maint-existing-check-id",
+      "id": "dd52d531-ed67-4a16-ba88-90cb5feffd5f",
       "name": "Verificar Orden Existente",
       "credentials": {
         "postgres": {
-          "id": "I7MdTzT2OpsQLA7O",
+          "id": "95gB8C5UUHd1h0BA",
           "name": "Postgres account"
         }
       }
@@ -60,8 +68,11 @@
       },
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
-      "position": [-60, 400],
-      "id": "maint-analyze-id",
+      "position": [
+        576,
+        160
+      ],
+      "id": "e3420194-f00c-4bb9-93fb-359147ade4be",
       "name": "Analizar Tendencia"
     },
     {
@@ -70,9 +81,21 @@
           "values": [
             {
               "conditions": {
-                "options": { "caseSensitive": false, "typeValidation": "strict", "version": 3 },
+                "options": {
+                  "caseSensitive": false,
+                  "typeValidation": "strict",
+                  "version": 3
+                },
                 "conditions": [
-                  { "id": "ms1", "leftValue": "={{ $json.save_order }}", "rightValue": true, "operator": { "type": "boolean", "operation": "equals" } }
+                  {
+                    "id": "ms1",
+                    "leftValue": "={{ $json.save_order }}",
+                    "rightValue": true,
+                    "operator": {
+                      "type": "boolean",
+                      "operation": "equals"
+                    }
+                  }
                 ],
                 "combinator": "and"
               },
@@ -81,9 +104,21 @@
             },
             {
               "conditions": {
-                "options": { "caseSensitive": false, "typeValidation": "strict", "version": 3 },
+                "options": {
+                  "caseSensitive": false,
+                  "typeValidation": "strict",
+                  "version": 3
+                },
                 "conditions": [
-                  { "id": "ms2", "leftValue": "={{ !$json.save_order }}", "rightValue": true, "operator": { "type": "boolean", "operation": "equals" } }
+                  {
+                    "id": "ms2",
+                    "leftValue": "={{ !$json.save_order }}",
+                    "rightValue": true,
+                    "operator": {
+                      "type": "boolean",
+                      "operation": "equals"
+                    }
+                  }
                 ],
                 "combinator": "and"
               },
@@ -96,8 +131,11 @@
       },
       "type": "n8n-nodes-base.switch",
       "typeVersion": 3.4,
-      "position": [200, 400],
-      "id": "maint-switch-id",
+      "position": [
+        864,
+        160
+      ],
+      "id": "1501c23d-2b9a-4912-a10a-5dc0e1838ae0",
       "name": "¿Crear Orden?"
     },
     {
@@ -110,13 +148,16 @@
       },
       "type": "n8n-nodes-base.postgres",
       "typeVersion": 2.6,
-      "position": [440, 300],
+      "position": [
+        1056,
+        -32
+      ],
       "alwaysOutputData": true,
-      "id": "maint-save-order-id",
+      "id": "7e452100-1513-4be9-a96e-945ca499107a",
       "name": "Guardar Orden Mant.",
       "credentials": {
         "postgres": {
-          "id": "I7MdTzT2OpsQLA7O",
+          "id": "95gB8C5UUHd1h0BA",
           "name": "Postgres account"
         }
       }
@@ -128,17 +169,29 @@
         "sendBody": true,
         "bodyParameters": {
           "parameters": [
-            { "name": "chat_id", "value": "={{ $env.TELEGRAM_CHAT_ID }}" },
-            { "name": "parse_mode", "value": "HTML" },
-            { "name": "text", "value": "={{ $('Analizar Tendencia').first().json.message }}" }
+            {
+              "name": "chat_id",
+              "value": "={{ $env.TELEGRAM_CHAT_ID }}"
+            },
+            {
+              "name": "parse_mode",
+              "value": "HTML"
+            },
+            {
+              "name": "text",
+              "value": "={{ $('Analizar Tendencia').first().json.message }}"
+            }
           ]
         },
         "options": {}
       },
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 4.4,
-      "position": [660, 300],
-      "id": "maint-telegram-id",
+      "position": [
+        1264,
+        -32
+      ],
+      "id": "200b874b-4513-409d-a21c-0137369dd548",
       "name": "Alerta Mantenimiento Telegram"
     },
     {
@@ -151,13 +204,16 @@
       },
       "type": "n8n-nodes-base.postgres",
       "typeVersion": 2.6,
-      "position": [440, 550],
+      "position": [
+        864,
+        368
+      ],
       "alwaysOutputData": true,
-      "id": "maint-log-id",
+      "id": "a0aa71af-0ff4-4bab-bc17-88b0604e39a4",
       "name": "Log Mantenimiento",
       "credentials": {
         "postgres": {
-          "id": "I7MdTzT2OpsQLA7O",
+          "id": "95gB8C5UUHd1h0BA",
           "name": "Postgres account"
         }
       }
@@ -168,64 +224,151 @@
       },
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
-      "position": [660, 550],
-      "id": "maint-response-id",
+      "position": [
+        1488,
+        176
+      ],
+      "id": "e20feb76-b6f5-46c6-91f9-9f62a8215544",
       "name": "Respuesta Mantenimiento"
     },
     {
       "parameters": {
         "respondWith": "json",
         "responseBody": "={{ JSON.stringify({status: 'accepted', agent: 'maintenance'}) }}",
-        "options": { "responseCode": 202 }
+        "options": {
+          "responseCode": 202
+        }
       },
       "type": "n8n-nodes-base.respondToWebhook",
       "typeVersion": 1.1,
-      "position": [-600, 500],
-      "id": "maint-respond-id",
+      "position": [
+        352,
+        -48
+      ],
+      "id": "63fe2db6-7dd7-4cd9-9433-1aea8bd9d4eb",
       "name": "Respuesta Rápida Maint"
     }
   ],
+  "pinData": {},
   "connections": {
     "Webhook Mantenimiento": {
-      "main": [[
-        { "node": "Respuesta Rápida Maint", "type": "main", "index": 0 },
-        { "node": "Tendencia Semanal", "type": "main", "index": 0 },
-        { "node": "Verificar Orden Existente", "type": "main", "index": 0 }
-      ]]
+      "main": [
+        [
+          {
+            "node": "Respuesta Rápida Maint",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Tendencia Semanal",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Verificar Orden Existente",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
     },
     "Tendencia Semanal": {
-      "main": [[{ "node": "Analizar Tendencia", "type": "main", "index": 0 }]]
+      "main": [
+        [
+          {
+            "node": "Analizar Tendencia",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
     },
     "Verificar Orden Existente": {
-      "main": [[{ "node": "Analizar Tendencia", "type": "main", "index": 0 }]]
+      "main": [
+        [
+          {
+            "node": "Analizar Tendencia",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
     },
     "Analizar Tendencia": {
-      "main": [[
-        { "node": "¿Crear Orden?", "type": "main", "index": 0 },
-        { "node": "Log Mantenimiento", "type": "main", "index": 0 }
-      ]]
+      "main": [
+        [
+          {
+            "node": "¿Crear Orden?",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Log Mantenimiento",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
     },
     "¿Crear Orden?": {
       "main": [
-        [{ "node": "Guardar Orden Mant.", "type": "main", "index": 0 }],
-        [{ "node": "Respuesta Mantenimiento", "type": "main", "index": 0 }]
+        [
+          {
+            "node": "Guardar Orden Mant.",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Respuesta Mantenimiento",
+            "type": "main",
+            "index": 0
+          }
+        ]
       ]
     },
     "Guardar Orden Mant.": {
-      "main": [[{ "node": "Alerta Mantenimiento Telegram", "type": "main", "index": 0 }]]
+      "main": [
+        [
+          {
+            "node": "Alerta Mantenimiento Telegram",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
     },
     "Alerta Mantenimiento Telegram": {
-      "main": [[{ "node": "Respuesta Mantenimiento", "type": "main", "index": 0 }]]
-    },
-    "Log Mantenimiento": {
-      "main": [[]]
+      "main": [
+        [
+          {
+            "node": "Respuesta Mantenimiento",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
     }
   },
   "active": true,
   "settings": {
-    "executionOrder": "v2",
-    "callerPolicy": "workflowsFromSameOwner"
+    "executionOrder": "v1",
+    "binaryMode": "separate",
+    "availableInMCP": false
   },
-  "meta": { "templateCredsSetupCompleted": true },
-  "tags": [{ "name": "agents" }]
+  "versionId": "f87d3a6f-2c08-4e48-962a-d393dfd83579",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "702eb394707c81656d9b2dd11f9fbd9990280d4e9ae9cafef5221f507e0f126f"
+  },
+  "id": "9ofQ3nspvK8odYn7",
+  "tags": [
+    {
+      "updatedAt": "2026-03-01T20:17:37.807Z",
+      "createdAt": "2026-03-01T20:17:37.807Z",
+      "id": "FGZA1HGwSDRQyaHB",
+      "name": "agente"
+    }
+  ]
 }

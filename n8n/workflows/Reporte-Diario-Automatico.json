@@ -1,0 +1,353 @@
+{
+  "name": "Reporte-Diario-Automatico",
+  "nodes": [
+    {
+      "parameters": {
+        "rule": {
+          "interval": [
+            {
+              "triggerAtHour": 8
+            }
+          ]
+        }
+      },
+      "type": "n8n-nodes-base.scheduleTrigger",
+      "typeVersion": 1.2,
+      "position": [
+        0,
+        0
+      ],
+      "id": "0c32ce35-58f1-4be6-910e-0d54f1c4fce7",
+      "name": "Diario 8:00 AM"
+    },
+    {
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "SELECT\n  area,\n  ROUND(SUM(reading)::numeric, 2) AS total_kwh,\n  ROUND(AVG(reading)::numeric, 2) AS promedio_kwh,\n  ROUND(MAX(reading)::numeric, 2) AS pico_kwh,\n  COUNT(*) AS lecturas,\n  MAX(severity) AS estado_max\nFROM energy_history\nWHERE timestamp >= NOW() - INTERVAL '24 hours'\nGROUP BY area\nORDER BY total_kwh DESC;",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.6,
+      "position": [
+        224,
+        0
+      ],
+      "id": "e1e9e291-0d77-4bd6-9a1b-7affbe3ae3fc",
+      "name": "Datos 24h",
+      "credentials": {
+        "postgres": {
+          "id": "95gB8C5UUHd1h0BA",
+          "name": "Postgres account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "SELECT\n  COUNT(*) AS total_anomalias,\n  COUNT(*) FILTER (WHERE severidad = 'Critico') AS criticas,\n  COUNT(*) FILTER (WHERE severidad = 'Advertencia') AS advertencias\nFROM anomalias\nWHERE timestamp >= NOW() - INTERVAL '24 hours';",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.6,
+      "position": [
+        224,
+        208
+      ],
+      "id": "99e5bd1f-8dc4-492d-b7a9-fcebb10432fd",
+      "name": "Conteo Anomalías 24h",
+      "credentials": {
+        "postgres": {
+          "id": "95gB8C5UUHd1h0BA",
+          "name": "Postgres account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "mode": "combine",
+        "combineBy": "combineAll",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.merge",
+      "typeVersion": 3.1,
+      "position": [
+        448,
+        112
+      ],
+      "id": "1931cf94-1a86-45d4-aec6-c04ac53fc365",
+      "name": "Unir Datos"
+    },
+    {
+      "parameters": {
+        "jsCode": "const energyRows = $('Datos 24h').all().map(i => i.json);\nconst anomalyData = $('Conteo Anomalías 24h').first().json;\n\nconst totalKwh = energyRows.reduce((s, r) => s + Number(r.total_kwh || 0), 0);\nconst costoEstimado = (totalKwh * 0.18).toFixed(2);\nconst co2 = (totalKwh * 0.233).toFixed(2);\nconst anomTotal = Number(anomalyData.total_anomalias || 0);\nconst anomCrit = Number(anomalyData.criticas || 0);\nconst anomWarn = Number(anomalyData.advertencias || 0);\n\nconst sevIcon = { Normal: '✅', Warning: '⚠️', Critical: '🚨' };\n\nlet msg = `📋 <b>REPORTE DIARIO AUTOMÁTICO</b>\\n`;\nmsg += `━━━━━━━━━━━━━━━━━━━━\\n`;\nmsg += `🕒 <i>${new Date().toLocaleString('es-ES', {timeZone:'America/Lima'})}</i>\\n`;\nmsg += `📊 Período: Últimas 24 horas\\n\\n`;\n\nmsg += `<b>⚡ CONSUMO POR ÁREA</b>\\n`;\nenergyRows.forEach(r => {\n  const icon = sevIcon[r.estado_max] || '⚪';\n  msg += `${icon} <b>${r.area}</b>: ${r.total_kwh} kWh (pico: ${r.pico_kwh})\\n`;\n});\n\nmsg += `\\n<b>🏭 RESUMEN GLOBAL</b>\\n`;\nmsg += `⚡ Total: <b>${totalKwh.toFixed(2)} kWh</b>\\n`;\nmsg += `💰 Costo: <b>S/. ${costoEstimado}</b>\\n`;\nmsg += `🌱 CO₂: <b>${co2} kg</b>\\n\\n`;\n\nmsg += `<b>🚨 ANOMALÍAS DETECTADAS</b>\\n`;\nif (anomTotal === 0) {\n  msg += `✅ Sin anomalías en las últimas 24h\\n`;\n} else {\n  msg += `🔴 Críticas: <b>${anomCrit}</b>\\n`;\n  msg += `🟠 Advertencias: <b>${anomWarn}</b>\\n`;\n  msg += `📊 Total: <b>${anomTotal}</b>\\n`;\n}\n\nmsg += `\\n━━━━━━━━━━━━━━━━━━━━\\n`;\nmsg += `🤖 <i>Reporte generado automáticamente por EnergyCore v2</i>`;\n\n// Prepare data summary for Gemini\nconst dataSummary = energyRows.map(r => `${r.area}: ${r.total_kwh} kWh (avg: ${r.promedio_kwh}, peak: ${r.pico_kwh})`).join(', ');\n\nreturn [{ json: { report_text: msg, data_summary: dataSummary, total_kwh: totalKwh.toFixed(2), anomalias: anomTotal } }];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        672,
+        112
+      ],
+      "id": "75df1d0c-1543-42c6-b63f-b8ea026ce46d",
+      "name": "Formatear Reporte Diario"
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "=https://api.telegram.org/bot{{ $env.TELEGRAM_TOKEN }}/sendMessage",
+        "sendBody": true,
+        "bodyParameters": {
+          "parameters": [
+            {
+              "name": "chat_id",
+              "value": "={{ $env.TELEGRAM_CHAT_ID }}"
+            },
+            {
+              "name": "text",
+              "value": "={{ $json.report_text }}"
+            },
+            {
+              "name": "parse_mode",
+              "value": "HTML"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.4,
+      "position": [
+        880,
+        0
+      ],
+      "id": "35120ecc-0e0a-45d7-a80f-1c2d17205a62",
+      "name": "Enviar Reporte Diario"
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "=Eres un analista de eficiencia energética. Analiza este resumen de consumo de las últimas 24h de un edificio universitario:\n\n{{ $json.data_summary }}\n\nTotal: {{ $json.total_kwh }} kWh\nAnomalías detectadas: {{ $json.anomalias }}\n\nGenera un análisis BREVE (máximo 4 líneas) con:\n1. El área de mayor preocupación\n2. Si el consumo global está en rango aceptable\n3. Una recomendación concreta para hoy\n\nResponde en español, directo y profesional.",
+        "messages": {
+          "messageValues": [
+            {
+              "message": "Eres un asistente de eficiencia energética conciso. Responde en español, máximo 4 líneas."
+            }
+          ]
+        },
+        "batching": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.chainLlm",
+      "typeVersion": 1.9,
+      "position": [
+        880,
+        208
+      ],
+      "id": "90dcf374-09ec-49dc-871c-a7c29426e9bd",
+      "name": "Análisis IA Diario"
+    },
+    {
+      "parameters": {
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatGoogleGemini",
+      "typeVersion": 1,
+      "position": [
+        880,
+        368
+      ],
+      "id": "115b1c7e-7fe5-4fe6-bdb0-9ec9facfa710",
+      "name": "Gemini Diario",
+      "credentials": {
+        "googlePalmApi": {
+          "id": "5kI0fspE9szXgm6q",
+          "name": "Google Gemini(PaLM) Api account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "=https://api.telegram.org/bot{{ $env.TELEGRAM_TOKEN }}/sendMessage",
+        "sendBody": true,
+        "bodyParameters": {
+          "parameters": [
+            {
+              "name": "chat_id",
+              "value": "={{ $env.TELEGRAM_CHAT_ID }}"
+            },
+            {
+              "name": "text",
+              "value": "=🧠 <b>ANÁLISIS IA DEL DÍA</b>\n━━━━━━━━━━━━━━━━━━━━\n\n{{ $json.text || $json.output }}\n\n🤖 <i>Análisis automático por Google Gemini</i>"
+            },
+            {
+              "name": "parse_mode",
+              "value": "HTML"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.4,
+      "position": [
+        1216,
+        208
+      ],
+      "id": "627596bf-1e44-4668-a57c-c4fb97b36c50",
+      "name": "Enviar Análisis IA"
+    },
+    {
+      "parameters": {},
+      "type": "n8n-nodes-base.noOp",
+      "typeVersion": 1,
+      "position": [
+        1216,
+        0
+      ],
+      "id": "39783af5-e93c-49cf-8ee6-b922eac3992d",
+      "name": "No Operation, do nothing"
+    },
+    {
+      "parameters": {},
+      "type": "n8n-nodes-base.noOp",
+      "typeVersion": 1,
+      "position": [
+        1440,
+        208
+      ],
+      "id": "398975a7-49c7-4c4f-a56e-0ead059b3e86",
+      "name": "No Operation, do nothing1"
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "Diario 8:00 AM": {
+      "main": [
+        [
+          {
+            "node": "Datos 24h",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Conteo Anomalías 24h",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Datos 24h": {
+      "main": [
+        [
+          {
+            "node": "Unir Datos",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Conteo Anomalías 24h": {
+      "main": [
+        [
+          {
+            "node": "Unir Datos",
+            "type": "main",
+            "index": 1
+          }
+        ]
+      ]
+    },
+    "Unir Datos": {
+      "main": [
+        [
+          {
+            "node": "Formatear Reporte Diario",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Formatear Reporte Diario": {
+      "main": [
+        [
+          {
+            "node": "Enviar Reporte Diario",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Análisis IA Diario",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Gemini Diario": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "Análisis IA Diario",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Análisis IA Diario": {
+      "main": [
+        [
+          {
+            "node": "Enviar Análisis IA",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Enviar Reporte Diario": {
+      "main": [
+        [
+          {
+            "node": "No Operation, do nothing",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Enviar Análisis IA": {
+      "main": [
+        [
+          {
+            "node": "No Operation, do nothing1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": true,
+  "settings": {
+    "executionOrder": "v1",
+    "binaryMode": "separate",
+    "availableInMCP": false
+  },
+  "versionId": "c9d9f14d-c1e9-4694-b440-a76509b41f8c",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "702eb394707c81656d9b2dd11f9fbd9990280d4e9ae9cafef5221f507e0f126f"
+  },
+  "id": "gGrbNBlExArLTRiE",
+  "tags": [
+    {
+      "updatedAt": "2026-03-01T20:18:41.169Z",
+      "createdAt": "2026-03-01T20:18:41.169Z",
+      "id": "aUDst9DeQzum2u8g",
+      "name": "utilidad"
+    }
+  ]
+}

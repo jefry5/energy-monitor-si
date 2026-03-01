@@ -1,5 +1,4 @@
 {
-  "id": "wf04",
   "name": "Agente-Orquestador",
   "nodes": [
     {
@@ -11,8 +10,11 @@
       },
       "type": "n8n-nodes-base.webhook",
       "typeVersion": 2,
-      "position": [-600, 300],
-      "id": "orch-webhook-id",
+      "position": [
+        -1744,
+        240
+      ],
+      "id": "52274b24-0447-420c-b2ce-d919791f9141",
       "name": "Webhook Orquestador",
       "webhookId": "agent-orchestrator"
     },
@@ -22,8 +24,11 @@
       },
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
-      "position": [-380, 300],
-      "id": "orch-logic-id",
+      "position": [
+        -1520,
+        240
+      ],
+      "id": "fb4ccddf-a5d6-489e-8ee6-1b7f115a4bc2",
       "name": "Lógica Orquestador"
     },
     {
@@ -34,13 +39,16 @@
       },
       "type": "n8n-nodes-base.postgres",
       "typeVersion": 2.6,
-      "position": [-160, 300],
+      "position": [
+        -1296,
+        240
+      ],
       "alwaysOutputData": true,
-      "id": "orch-dedup-check-id",
+      "id": "3e23b4cf-f12a-4ffc-89bd-6c7851758e74",
       "name": "Verificar Dedup",
       "credentials": {
         "postgres": {
-          "id": "I7MdTzT2OpsQLA7O",
+          "id": "95gB8C5UUHd1h0BA",
           "name": "Postgres account"
         }
       }
@@ -51,8 +59,11 @@
       },
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
-      "position": [60, 300],
-      "id": "orch-eval-dedup-id",
+      "position": [
+        -1072,
+        240
+      ],
+      "id": "ef3c3c44-4f2a-4641-8cc3-1de3a3d70cbb",
       "name": "Evaluar Dedup"
     },
     {
@@ -61,9 +72,21 @@
           "values": [
             {
               "conditions": {
-                "options": { "caseSensitive": false, "typeValidation": "strict", "version": 3 },
+                "options": {
+                  "caseSensitive": false,
+                  "typeValidation": "strict",
+                  "version": 3
+                },
                 "conditions": [
-                  { "id": "od1", "leftValue": "={{ $json.action }}", "rightValue": "dispatch", "operator": { "type": "string", "operation": "equals" } }
+                  {
+                    "id": "od1",
+                    "leftValue": "={{ $json.action }}",
+                    "rightValue": "dispatch",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals"
+                    }
+                  }
                 ],
                 "combinator": "and"
               },
@@ -72,9 +95,21 @@
             },
             {
               "conditions": {
-                "options": { "caseSensitive": false, "typeValidation": "strict", "version": 3 },
+                "options": {
+                  "caseSensitive": false,
+                  "typeValidation": "strict",
+                  "version": 3
+                },
                 "conditions": [
-                  { "id": "od2", "leftValue": "={{ $json.action }}", "rightValue": "dispatch", "operator": { "type": "string", "operation": "notEquals" } }
+                  {
+                    "id": "od2",
+                    "leftValue": "={{ $json.action }}",
+                    "rightValue": "dispatch",
+                    "operator": {
+                      "type": "string",
+                      "operation": "notEquals"
+                    }
+                  }
                 ],
                 "combinator": "and"
               },
@@ -87,8 +122,11 @@
       },
       "type": "n8n-nodes-base.switch",
       "typeVersion": 3.4,
-      "position": [280, 300],
-      "id": "orch-switch-dispatch-id",
+      "position": [
+        -864,
+        240
+      ],
+      "id": "1c96088a-71ae-4bc7-ba00-e529cb4ca0e8",
       "name": "Switch Dispatch"
     },
     {
@@ -99,12 +137,15 @@
       },
       "type": "n8n-nodes-base.postgres",
       "typeVersion": 2.6,
-      "position": [500, 200],
-      "id": "orch-save-dedup-id",
+      "position": [
+        -624,
+        -48
+      ],
+      "id": "2422803e-8b15-4f4e-8570-3f755e1282b9",
       "name": "Guardar Dedup Key",
       "credentials": {
         "postgres": {
-          "id": "I7MdTzT2OpsQLA7O",
+          "id": "95gB8C5UUHd1h0BA",
           "name": "Postgres account"
         }
       }
@@ -117,12 +158,15 @@
       },
       "type": "n8n-nodes-base.postgres",
       "typeVersion": 2.6,
-      "position": [500, 400],
-      "id": "orch-log-decision-id",
+      "position": [
+        -624,
+        128
+      ],
+      "id": "c595a5d6-ec11-4c22-8728-e50f3afdb7e1",
       "name": "Log Decision",
       "credentials": {
         "postgres": {
-          "id": "I7MdTzT2OpsQLA7O",
+          "id": "95gB8C5UUHd1h0BA",
           "name": "Postgres account"
         }
       }
@@ -133,100 +177,155 @@
       },
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
-      "position": [720, 300],
-      "id": "orch-prepare-dispatch-id",
+      "position": [
+        -624,
+        368
+      ],
+      "id": "524ecf0a-9249-4b7b-8b3e-207116f5ad59",
       "name": "Preparar Dispatch"
     },
     {
       "parameters": {
-        "url": "={{ $env.N8N_WEBHOOK_URL || 'http://n8n:5678' }}/webhook/agent-diagnosis",
         "method": "POST",
+        "url": "={{ $env.N8N_WEBHOOK_URL || 'http://n8n:5678' }}/webhook/agent-diagnosis",
         "sendBody": true,
         "specifyBody": "json",
         "jsonBody": "={{ JSON.stringify($json) }}",
-        "options": { "timeout": 30000 }
+        "options": {
+          "timeout": 30000
+        }
       },
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 4.4,
-      "position": [960, 100],
-      "id": "orch-call-diagnosis-id",
+      "position": [
+        -288,
+        -48
+      ],
+      "id": "fc7152d2-d887-497c-b835-e2bc7a989e71",
       "name": "Llamar Diagnóstico"
     },
     {
       "parameters": {
-        "url": "={{ $env.N8N_WEBHOOK_URL || 'http://n8n:5678' }}/webhook/agent-correlation",
         "method": "POST",
+        "url": "={{ $env.N8N_WEBHOOK_URL || 'http://n8n:5678' }}/webhook/agent-correlation",
         "sendBody": true,
         "specifyBody": "json",
         "jsonBody": "={{ JSON.stringify($json) }}",
-        "options": { "timeout": 30000 }
+        "options": {
+          "timeout": 30000
+        }
       },
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 4.4,
-      "position": [960, 300],
-      "id": "orch-call-correlation-id",
+      "position": [
+        -288,
+        128
+      ],
+      "id": "2547a267-cb10-4011-818f-772830ff4ca7",
       "name": "Llamar Correlación"
     },
     {
       "parameters": {
-        "url": "={{ $env.N8N_WEBHOOK_URL || 'http://n8n:5678' }}/webhook/agent-resolution",
         "method": "POST",
+        "url": "={{ $env.N8N_WEBHOOK_URL || 'http://n8n:5678' }}/webhook/agent-resolution",
         "sendBody": true,
         "specifyBody": "json",
         "jsonBody": "={{ JSON.stringify($json) }}",
-        "options": { "timeout": 30000 }
+        "options": {
+          "timeout": 30000
+        }
       },
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 4.4,
-      "position": [960, 500],
-      "id": "orch-call-resolution-id",
+      "position": [
+        -288,
+        368
+      ],
+      "id": "46e618d8-e5e0-46a2-8d89-2cc68c024df6",
       "name": "Llamar Resolución"
     },
     {
       "parameters": {
-        "url": "={{ $env.N8N_WEBHOOK_URL || 'http://n8n:5678' }}/webhook/agent-maintenance",
         "method": "POST",
+        "url": "={{ $env.N8N_WEBHOOK_URL || 'http://n8n:5678' }}/webhook/agent-maintenance",
         "sendBody": true,
         "specifyBody": "json",
         "jsonBody": "={{ JSON.stringify($json) }}",
-        "options": { "timeout": 30000 }
+        "options": {
+          "timeout": 30000
+        }
       },
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 4.4,
-      "position": [960, 700],
-      "id": "orch-call-maintenance-id",
+      "position": [
+        -288,
+        560
+      ],
+      "id": "bfe682d0-1578-47e2-8ac9-5a00e3e0ff11",
       "name": "Llamar Mantenimiento"
     },
     {
       "parameters": {
         "conditions": {
-          "options": { "caseSensitive": false, "typeValidation": "strict", "version": 3 },
+          "options": {
+            "caseSensitive": false,
+            "typeValidation": "strict",
+            "version": 3
+          },
           "conditions": [
-            { "id": "if-diag", "leftValue": "={{ $json.invoke_diagnosis }}", "rightValue": true, "operator": { "type": "boolean", "operation": "equals" } }
+            {
+              "id": "if-diag",
+              "leftValue": "={{ $json.invoke_diagnosis }}",
+              "rightValue": true,
+              "operator": {
+                "type": "boolean",
+                "operation": "equals"
+              }
+            }
           ],
           "combinator": "and"
-        }
+        },
+        "options": {}
       },
       "type": "n8n-nodes-base.if",
       "typeVersion": 2,
-      "position": [960, -100],
-      "id": "orch-if-diag-id",
+      "position": [
+        -624,
+        -224
+      ],
+      "id": "a59e62b1-f48b-4165-9581-30a4355a0c5e",
       "name": "¿Diagnóstico?"
     },
     {
       "parameters": {
         "conditions": {
-          "options": { "caseSensitive": false, "typeValidation": "strict", "version": 3 },
+          "options": {
+            "caseSensitive": false,
+            "typeValidation": "strict",
+            "version": 3
+          },
           "conditions": [
-            { "id": "if-corr", "leftValue": "={{ $json.invoke_correlation }}", "rightValue": true, "operator": { "type": "boolean", "operation": "equals" } }
+            {
+              "id": "if-corr",
+              "leftValue": "={{ $json.invoke_correlation }}",
+              "rightValue": true,
+              "operator": {
+                "type": "boolean",
+                "operation": "equals"
+              }
+            }
           ],
           "combinator": "and"
-        }
+        },
+        "options": {}
       },
       "type": "n8n-nodes-base.if",
       "typeVersion": 2,
-      "position": [960, 200],
-      "id": "orch-if-corr-id",
+      "position": [
+        -288,
+        -224
+      ],
+      "id": "b32f3197-975a-4d7f-8af2-566a6fb5d6ad",
       "name": "¿Correlación?"
     },
     {
@@ -235,74 +334,199 @@
       },
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
-      "position": [1200, 300],
-      "id": "orch-response-id",
+      "position": [
+        16,
+        256
+      ],
+      "id": "29b5a850-07fd-4938-bc37-5aa9c6a16b09",
       "name": "Respuesta Orquestador"
     },
     {
       "parameters": {
         "respondWith": "json",
         "responseBody": "={{ JSON.stringify({ status: 'accepted', area: $json.area || 'unknown', ts: new Date().toISOString() }) }}",
-        "options": { "responseCode": 202 }
+        "options": {
+          "responseCode": 202
+        }
       },
       "type": "n8n-nodes-base.respondToWebhook",
       "typeVersion": 1.1,
-      "position": [-380, 500],
-      "id": "orch-respond-early-id",
+      "position": [
+        -1520,
+        416
+      ],
+      "id": "6513150d-d912-4ef3-bdce-d193f40c6d68",
       "name": "Respuesta Inmediata"
     }
   ],
+  "pinData": {},
   "connections": {
     "Webhook Orquestador": {
-      "main": [[{ "node": "Respuesta Inmediata", "type": "main", "index": 0 }, { "node": "Lógica Orquestador", "type": "main", "index": 0 }]]
+      "main": [
+        [
+          {
+            "node": "Respuesta Inmediata",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Lógica Orquestador",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
     },
     "Lógica Orquestador": {
-      "main": [[{ "node": "Verificar Dedup", "type": "main", "index": 0 }]]
+      "main": [
+        [
+          {
+            "node": "Verificar Dedup",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
     },
     "Verificar Dedup": {
-      "main": [[{ "node": "Evaluar Dedup", "type": "main", "index": 0 }]]
+      "main": [
+        [
+          {
+            "node": "Evaluar Dedup",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
     },
     "Evaluar Dedup": {
-      "main": [[{ "node": "Switch Dispatch", "type": "main", "index": 0 }]]
+      "main": [
+        [
+          {
+            "node": "Switch Dispatch",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
     },
     "Switch Dispatch": {
       "main": [
         [
-          { "node": "Guardar Dedup Key", "type": "main", "index": 0 },
-          { "node": "Log Decision", "type": "main", "index": 0 },
-          { "node": "Preparar Dispatch", "type": "main", "index": 0 }
+          {
+            "node": "Guardar Dedup Key",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Log Decision",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Preparar Dispatch",
+            "type": "main",
+            "index": 0
+          }
         ],
         [
-          { "node": "Respuesta Orquestador", "type": "main", "index": 0 }
+          {
+            "node": "Respuesta Orquestador",
+            "type": "main",
+            "index": 0
+          }
         ]
       ]
     },
     "Preparar Dispatch": {
-      "main": [[
-        { "node": "Llamar Diagnóstico", "type": "main", "index": 0 },
-        { "node": "Llamar Correlación", "type": "main", "index": 0 },
-        { "node": "Llamar Resolución", "type": "main", "index": 0 },
-        { "node": "Llamar Mantenimiento", "type": "main", "index": 0 }
-      ]]
+      "main": [
+        [
+          {
+            "node": "Llamar Diagnóstico",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Llamar Correlación",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Llamar Resolución",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Llamar Mantenimiento",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
     },
     "Llamar Diagnóstico": {
-      "main": [[{ "node": "Respuesta Orquestador", "type": "main", "index": 0 }]]
+      "main": [
+        [
+          {
+            "node": "Respuesta Orquestador",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
     },
     "Llamar Correlación": {
-      "main": [[{ "node": "Respuesta Orquestador", "type": "main", "index": 0 }]]
+      "main": [
+        [
+          {
+            "node": "Respuesta Orquestador",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
     },
     "Llamar Resolución": {
-      "main": [[{ "node": "Respuesta Orquestador", "type": "main", "index": 0 }]]
+      "main": [
+        [
+          {
+            "node": "Respuesta Orquestador",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
     },
     "Llamar Mantenimiento": {
-      "main": [[{ "node": "Respuesta Orquestador", "type": "main", "index": 0 }]]
+      "main": [
+        [
+          {
+            "node": "Respuesta Orquestador",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
     }
   },
   "active": true,
   "settings": {
     "executionOrder": "v1",
-    "callerPolicy": "workflowsFromSameOwner"
+    "binaryMode": "separate",
+    "availableInMCP": false
   },
-  "meta": { "templateCredsSetupCompleted": true },
-  "tags": [{ "name": "agents" }]
+  "versionId": "a1cb1c06-dd75-4458-b044-058c9ce5ed1f",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "702eb394707c81656d9b2dd11f9fbd9990280d4e9ae9cafef5221f507e0f126f"
+  },
+  "id": "M4Yonw7yPNGUgs35",
+  "tags": [
+    {
+      "updatedAt": "2026-03-01T20:17:37.807Z",
+      "createdAt": "2026-03-01T20:17:37.807Z",
+      "id": "FGZA1HGwSDRQyaHB",
+      "name": "agente"
+    }
+  ]
 }

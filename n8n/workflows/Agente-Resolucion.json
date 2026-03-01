@@ -1,5 +1,4 @@
 {
-  "id": "wf08",
   "name": "Agente-Resolucion",
   "nodes": [
     {
@@ -11,8 +10,11 @@
       },
       "type": "n8n-nodes-base.webhook",
       "typeVersion": 2,
-      "position": [-600, 300],
-      "id": "res-webhook-id",
+      "position": [
+        -624,
+        -96
+      ],
+      "id": "e86b70e5-896a-4fb5-a9a2-f732d186c14d",
       "name": "Webhook Resolución",
       "webhookId": "agent-resolution"
     },
@@ -24,13 +26,16 @@
       },
       "type": "n8n-nodes-base.postgres",
       "typeVersion": 2.6,
-      "position": [-380, 300],
+      "position": [
+        -400,
+        -96
+      ],
       "alwaysOutputData": true,
-      "id": "res-check-incident-id",
+      "id": "372e3dee-e92f-4275-8941-10ded5781068",
       "name": "Buscar Incidente Abierto",
       "credentials": {
         "postgres": {
-          "id": "I7MdTzT2OpsQLA7O",
+          "id": "95gB8C5UUHd1h0BA",
           "name": "Postgres account"
         }
       }
@@ -41,8 +46,11 @@
       },
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
-      "position": [-100, 300],
-      "id": "res-evaluate-id",
+      "position": [
+        -176,
+        -96
+      ],
+      "id": "8536f2b1-2d88-47f7-9821-39304f122721",
       "name": "Evaluar Resolución"
     },
     {
@@ -51,9 +59,21 @@
           "values": [
             {
               "conditions": {
-                "options": { "caseSensitive": false, "typeValidation": "strict", "version": 3 },
+                "options": {
+                  "caseSensitive": false,
+                  "typeValidation": "strict",
+                  "version": 3
+                },
                 "conditions": [
-                  { "id": "ra1", "leftValue": "={{ $json.action }}", "rightValue": "open_incident", "operator": { "type": "string", "operation": "equals" } }
+                  {
+                    "id": "ra1",
+                    "leftValue": "={{ $json.action }}",
+                    "rightValue": "open_incident",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals"
+                    }
+                  }
                 ],
                 "combinator": "and"
               },
@@ -62,9 +82,21 @@
             },
             {
               "conditions": {
-                "options": { "caseSensitive": false, "typeValidation": "strict", "version": 3 },
+                "options": {
+                  "caseSensitive": false,
+                  "typeValidation": "strict",
+                  "version": 3
+                },
                 "conditions": [
-                  { "id": "ra2", "leftValue": "={{ $json.action }}", "rightValue": "close_incident", "operator": { "type": "string", "operation": "equals" } }
+                  {
+                    "id": "ra2",
+                    "leftValue": "={{ $json.action }}",
+                    "rightValue": "close_incident",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals"
+                    }
+                  }
                 ],
                 "combinator": "and"
               },
@@ -73,9 +105,21 @@
             },
             {
               "conditions": {
-                "options": { "caseSensitive": false, "typeValidation": "strict", "version": 3 },
+                "options": {
+                  "caseSensitive": false,
+                  "typeValidation": "strict",
+                  "version": 3
+                },
                 "conditions": [
-                  { "id": "ra3", "leftValue": "={{ $json.action }}", "rightValue": "escalate_incident", "operator": { "type": "string", "operation": "equals" } }
+                  {
+                    "id": "ra3",
+                    "leftValue": "={{ $json.action }}",
+                    "rightValue": "escalate_incident",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals"
+                    }
+                  }
                 ],
                 "combinator": "and"
               },
@@ -84,9 +128,21 @@
             },
             {
               "conditions": {
-                "options": { "caseSensitive": false, "typeValidation": "strict", "version": 3 },
+                "options": {
+                  "caseSensitive": false,
+                  "typeValidation": "strict",
+                  "version": 3
+                },
                 "conditions": [
-                  { "id": "ra4", "leftValue": "={{ $json.action }}", "rightValue": "open_incident|close_incident|escalate_incident", "operator": { "type": "string", "operation": "notRegex" } }
+                  {
+                    "id": "ra4",
+                    "leftValue": "={{ $json.action }}",
+                    "rightValue": "open_incident|close_incident|escalate_incident",
+                    "operator": {
+                      "type": "string",
+                      "operation": "notRegex"
+                    }
+                  }
                 ],
                 "combinator": "and"
               },
@@ -99,8 +155,11 @@
       },
       "type": "n8n-nodes-base.switch",
       "typeVersion": 3.4,
-      "position": [140, 300],
-      "id": "res-switch-action-id",
+      "position": [
+        64,
+        -128
+      ],
+      "id": "3857a299-ac18-4028-8f97-66cbf563e391",
       "name": "Switch Acción"
     },
     {
@@ -113,13 +172,16 @@
       },
       "type": "n8n-nodes-base.postgres",
       "typeVersion": 2.6,
-      "position": [400, 100],
+      "position": [
+        384,
+        -384
+      ],
       "alwaysOutputData": true,
-      "id": "res-open-db-id",
+      "id": "f869b5e2-e8f1-482d-a86d-6957ba6eca47",
       "name": "Abrir Incidente DB",
       "credentials": {
         "postgres": {
-          "id": "I7MdTzT2OpsQLA7O",
+          "id": "95gB8C5UUHd1h0BA",
           "name": "Postgres account"
         }
       }
@@ -134,13 +196,16 @@
       },
       "type": "n8n-nodes-base.postgres",
       "typeVersion": 2.6,
-      "position": [400, 300],
+      "position": [
+        384,
+        -192
+      ],
       "alwaysOutputData": true,
-      "id": "res-close-db-id",
+      "id": "0b42104d-64a3-4a64-ab3c-19f2765ab292",
       "name": "Cerrar Incidente DB",
       "credentials": {
         "postgres": {
-          "id": "I7MdTzT2OpsQLA7O",
+          "id": "95gB8C5UUHd1h0BA",
           "name": "Postgres account"
         }
       }
@@ -152,17 +217,29 @@
         "sendBody": true,
         "bodyParameters": {
           "parameters": [
-            { "name": "chat_id", "value": "={{ $env.TELEGRAM_CHAT_ID }}" },
-            { "name": "parse_mode", "value": "HTML" },
-            { "name": "text", "value": "=✅ <b>INCIDENTE RESUELTO AUTOMÁTICAMENTE</b>\n━━━━━━━━━━━━━━━━━━━━\n📍 Área: <b>{{ $('Evaluar Resolución').first().json.area }}</b>\n⏱ Tiempo de resolución: <b>{{ $('Evaluar Resolución').first().json.resolution_time_min }} min</b>\n📊 kWh al cerrar: {{ $('Evaluar Resolución').first().json.kwh_at_close }}\n\n🤖 <i>El consumo volvió a niveles normales</i>" }
+            {
+              "name": "chat_id",
+              "value": "={{ $env.TELEGRAM_CHAT_ID }}"
+            },
+            {
+              "name": "parse_mode",
+              "value": "HTML"
+            },
+            {
+              "name": "text",
+              "value": "=✅ <b>INCIDENTE RESUELTO AUTOMÁTICAMENTE</b>\n━━━━━━━━━━━━━━━━━━━━\n📍 Área: <b>{{ $('Evaluar Resolución').first().json.area }}</b>\n⏱ Tiempo de resolución: <b>{{ $('Evaluar Resolución').first().json.resolution_time_min }} min</b>\n📊 kWh al cerrar: {{ $('Evaluar Resolución').first().json.kwh_at_close }}\n\n🤖 <i>El consumo volvió a niveles normales</i>"
+            }
           ]
         },
         "options": {}
       },
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 4.4,
-      "position": [640, 300],
-      "id": "res-telegram-resolved-id",
+      "position": [
+        560,
+        -192
+      ],
+      "id": "e271b482-67f4-4e51-9936-0e5dfb33700a",
       "name": "Notificar Resolución"
     },
     {
@@ -175,13 +252,16 @@
       },
       "type": "n8n-nodes-base.postgres",
       "typeVersion": 2.6,
-      "position": [400, 500],
+      "position": [
+        384,
+        64
+      ],
       "alwaysOutputData": true,
-      "id": "res-escalate-db-id",
+      "id": "f0ae3f85-aa35-4897-a42f-20c37fd22e84",
       "name": "Escalar Incidente DB",
       "credentials": {
         "postgres": {
-          "id": "I7MdTzT2OpsQLA7O",
+          "id": "95gB8C5UUHd1h0BA",
           "name": "Postgres account"
         }
       }
@@ -193,18 +273,33 @@
         "sendBody": true,
         "bodyParameters": {
           "parameters": [
-            { "name": "chat_id", "value": "={{ $env.TELEGRAM_CHAT_ID }}" },
-            { "name": "parse_mode", "value": "HTML" },
-            { "name": "text", "value": "=🚨 <b>ESCALAMIENTO DE INCIDENTE</b>\n━━━━━━━━━━━━━━━━━━━━\n📍 Área: <b>{{ $('Evaluar Resolución').first().json.area }}</b>\n⏰ Tiempo abierto: <b>{{ $('Evaluar Resolución').first().json.hours_open }}h</b>\n\n⚠️ El consumo NO ha vuelto a niveles normales.\nSe requiere <b>intervención manual</b>." },
-            { "name": "reply_markup", "value": "={{ JSON.stringify({ inline_keyboard: [[{text:'🔴 Cortar Energía', callback_data:'cut_' + $('Evaluar Resolución').first().json.area}, {text:'✅ Marcar Resuelto', callback_data:'feedback_resuelto_' + $('Evaluar Resolución').first().json.area}]] }) }}" }
+            {
+              "name": "chat_id",
+              "value": "={{ $env.TELEGRAM_CHAT_ID }}"
+            },
+            {
+              "name": "parse_mode",
+              "value": "HTML"
+            },
+            {
+              "name": "text",
+              "value": "=🚨 <b>ESCALAMIENTO DE INCIDENTE</b>\n━━━━━━━━━━━━━━━━━━━━\n📍 Área: <b>{{ $('Evaluar Resolución').first().json.area }}</b>\n⏰ Tiempo abierto: <b>{{ $('Evaluar Resolución').first().json.hours_open }}h</b>\n\n⚠️ El consumo NO ha vuelto a niveles normales.\nSe requiere <b>intervención manual</b>."
+            },
+            {
+              "name": "reply_markup",
+              "value": "={{ JSON.stringify({ inline_keyboard: [[{text:'🔴 Cortar Energía', callback_data:'cut_' + $('Evaluar Resolución').first().json.area}, {text:'✅ Marcar Resuelto', callback_data:'feedback_resuelto_' + $('Evaluar Resolución').first().json.area}]] }) }}"
+            }
           ]
         },
         "options": {}
       },
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 4.4,
-      "position": [640, 500],
-      "id": "res-telegram-escalated-id",
+      "position": [
+        560,
+        64
+      ],
+      "id": "b7bf5abf-45aa-414c-a0ac-5132c0d8c96f",
       "name": "Notificar Escalamiento"
     },
     {
@@ -217,13 +312,16 @@
       },
       "type": "n8n-nodes-base.postgres",
       "typeVersion": 2.6,
-      "position": [400, 700],
+      "position": [
+        64,
+        144
+      ],
       "alwaysOutputData": true,
-      "id": "res-log-id",
+      "id": "544dd481-2089-4f49-a26f-87e9307654e7",
       "name": "Log Resolución",
       "credentials": {
         "postgres": {
-          "id": "I7MdTzT2OpsQLA7O",
+          "id": "95gB8C5UUHd1h0BA",
           "name": "Postgres account"
         }
       }
@@ -234,71 +332,182 @@
       },
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
-      "position": [860, 400],
-      "id": "res-response-id",
+      "position": [
+        1024,
+        -48
+      ],
+      "id": "c0d0312f-9f21-473c-9230-c0cbb47ddcb3",
       "name": "Respuesta Resolución"
     },
     {
       "parameters": {
         "respondWith": "json",
         "responseBody": "={{ JSON.stringify({status: 'accepted', agent: 'resolution'}) }}",
-        "options": { "responseCode": 202 }
+        "options": {
+          "responseCode": 202
+        }
       },
       "type": "n8n-nodes-base.respondToWebhook",
       "typeVersion": 1.1,
-      "position": [-600, 500],
-      "id": "resol-respond-id",
+      "position": [
+        -400,
+        -288
+      ],
+      "id": "08cfe4b9-2ef9-40d5-aba8-d3bc146f5adb",
       "name": "Respuesta Rápida Resol"
     }
   ],
+  "pinData": {},
   "connections": {
     "Webhook Resolución": {
-      "main": [[
-        { "node": "Respuesta Rápida Resol", "type": "main", "index": 0 },
-        { "node": "Buscar Incidente Abierto", "type": "main", "index": 0 }
-      ]]
+      "main": [
+        [
+          {
+            "node": "Respuesta Rápida Resol",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Buscar Incidente Abierto",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
     },
     "Buscar Incidente Abierto": {
-      "main": [[{ "node": "Evaluar Resolución", "type": "main", "index": 0 }]]
+      "main": [
+        [
+          {
+            "node": "Evaluar Resolución",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
     },
     "Evaluar Resolución": {
-      "main": [[
-        { "node": "Switch Acción", "type": "main", "index": 0 },
-        { "node": "Log Resolución", "type": "main", "index": 0 }
-      ]]
+      "main": [
+        [
+          {
+            "node": "Switch Acción",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Log Resolución",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
     },
     "Switch Acción": {
       "main": [
-        [{ "node": "Abrir Incidente DB", "type": "main", "index": 0 }],
-        [{ "node": "Cerrar Incidente DB", "type": "main", "index": 0 }],
-        [{ "node": "Escalar Incidente DB", "type": "main", "index": 0 }],
-        [{ "node": "Respuesta Resolución", "type": "main", "index": 0 }]
+        [
+          {
+            "node": "Abrir Incidente DB",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Cerrar Incidente DB",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Escalar Incidente DB",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Respuesta Resolución",
+            "type": "main",
+            "index": 0
+          }
+        ]
       ]
     },
     "Abrir Incidente DB": {
-      "main": [[{ "node": "Respuesta Resolución", "type": "main", "index": 0 }]]
+      "main": [
+        [
+          {
+            "node": "Respuesta Resolución",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
     },
     "Cerrar Incidente DB": {
-      "main": [[{ "node": "Notificar Resolución", "type": "main", "index": 0 }]]
+      "main": [
+        [
+          {
+            "node": "Notificar Resolución",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
     },
     "Notificar Resolución": {
-      "main": [[{ "node": "Respuesta Resolución", "type": "main", "index": 0 }]]
+      "main": [
+        [
+          {
+            "node": "Respuesta Resolución",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
     },
     "Escalar Incidente DB": {
-      "main": [[{ "node": "Notificar Escalamiento", "type": "main", "index": 0 }]]
+      "main": [
+        [
+          {
+            "node": "Notificar Escalamiento",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
     },
     "Notificar Escalamiento": {
-      "main": [[{ "node": "Respuesta Resolución", "type": "main", "index": 0 }]]
-    },
-    "Log Resolución": {
-      "main": [[]]
+      "main": [
+        [
+          {
+            "node": "Respuesta Resolución",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
     }
   },
   "active": true,
   "settings": {
-    "executionOrder": "v2",
-    "callerPolicy": "workflowsFromSameOwner"
+    "executionOrder": "v1",
+    "binaryMode": "separate",
+    "availableInMCP": false
   },
-  "meta": { "templateCredsSetupCompleted": true },
-  "tags": [{ "name": "agents" }]
+  "versionId": "3b2555bf-5803-43d3-8269-8637392684e6",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "702eb394707c81656d9b2dd11f9fbd9990280d4e9ae9cafef5221f507e0f126f"
+  },
+  "id": "znS82pmh69tlT0TK",
+  "tags": [
+    {
+      "updatedAt": "2026-03-01T20:17:37.807Z",
+      "createdAt": "2026-03-01T20:17:37.807Z",
+      "id": "FGZA1HGwSDRQyaHB",
+      "name": "agente"
+    }
+  ]
 }

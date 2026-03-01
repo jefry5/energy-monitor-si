@@ -1,0 +1,787 @@
+{
+  "name": "Energía-Monitor-Pro-v2",
+  "nodes": [
+    {
+      "parameters": {
+        "topics": "edificio/+/consumo",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.mqttTrigger",
+      "typeVersion": 1,
+      "position": [
+        -1104,
+        256
+      ],
+      "id": "9655e73f-6b4c-47b8-962f-305c925fd37c",
+      "name": "MQTT Trigger",
+      "credentials": {
+        "mqtt": {
+          "id": "ZeU0VkkDUESOWLCx",
+          "name": "MQTT account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "const item = $input.first().json;\nlet raw = item.message ?? item.body ?? item.payload ?? item;\nif (raw && typeof raw === 'object' && typeof raw.message === 'string') raw = raw.message;\n\nlet payload;\nif (typeof raw === 'string') {\n  try { payload = JSON.parse(raw); } catch(e) { throw new Error(`Payload no es JSON válido: ${raw}`); }\n} else { payload = raw; }\n\nconst area = payload.area;\nconst kwh  = Number(payload.kwh);\nconst timestamp = payload.timestamp || new Date().toISOString();\n\nif (!area) throw new Error('Falta \"area\" en el payload.');\nif (!Number.isFinite(kwh)) throw new Error(`\"kwh\" inválido: ${payload.kwh}`);\n\nreturn [{ json: { area, kwh: Number(kwh.toFixed(4)), timestamp, topic: item.topic ?? null, modo: payload.modo ?? 'normal' } }];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -880,
+        256
+      ],
+      "id": "b115458f-8cf0-472f-b374-9266f6389d8c",
+      "name": "Parsear MQTT"
+    },
+    {
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "SELECT\n  COALESCE(e.ema_actual, {{ $json.kwh }}) AS ema_actual,\n  COALESCE(e.contador, 0)                 AS contador\nFROM (SELECT 1) AS dummy\nLEFT JOIN ema_estado e ON e.area = '{{ $json.area }}';",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.6,
+      "position": [
+        -656,
+        256
+      ],
+      "id": "ec4c9d63-582a-4da8-8a93-036934a027a9",
+      "name": "Obtener EMA",
+      "credentials": {
+        "postgres": {
+          "id": "95gB8C5UUHd1h0BA",
+          "name": "Postgres account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "const ALPHA  = 0.2;\nconst WARMUP = Number($env?.WARMUP_READINGS ?? 50);\n\nconst parsedData   = $('Parsear MQTT').first().json;\nconst area         = parsedData.area;\nconst kwh          = parsedData.kwh;\nconst timestamp    = parsedData.timestamp;\nconst modo         = (parsedData.modo ?? 'normal').toLowerCase();\nconst ema_anterior = Number($input.first().json.ema_actual);\nconst contador_ant = Number($input.first().json.contador);\nconst es_primera   = contador_ant === 0;\n\n// Detect if reading comes from an anomaly simulation mode\nconst esAnomalia = modo !== 'normal' && modo !== 'ok' && modo !== 'relay_off';\nconst noActualizarEma = esAnomalia || modo === 'relay_off';\n\n// Only update EMA with normal readings to keep baseline stable\nconst ema_nuevo = es_primera ? kwh : (noActualizarEma ? ema_anterior : ALPHA * kwh + (1 - ALPHA) * ema_anterior);\nconst contador_nuevo = contador_ant + 1;\n\n// For NORMAL areas: compare against ema_nuevo (original behavior)\n// For ANOMALY areas: compare against ema_anterior (stable baseline)\nconst base_comparacion = es_primera ? kwh : (noActualizarEma ? ema_anterior : ema_nuevo);\nconst denom = Math.abs(base_comparacion) < 1e-9 ? 1e-9 : base_comparacion;\nconst desviacion = ((kwh - base_comparacion) / denom) * 100;\nconst enCalentamiento = contador_nuevo <= WARMUP;\n\nlet severidad = 'Normal';\nif (!enCalentamiento && !es_primera) {\n  if      (desviacion > 80) severidad = 'Critico';\n  else if (desviacion > 35) severidad = 'Advertencia';\n  // If simulator is in anomaly mode, force at least Advertencia\n  if (esAnomalia && severidad === 'Normal') severidad = 'Advertencia';\n}\n\nreturn [{ json: { area, kwh: Number(kwh.toFixed(4)), ema: Number(ema_nuevo.toFixed(4)), desviacion: Number(desviacion.toFixed(2)), severidad, enCalentamiento, es_primera_lectura: es_primera, lectura_num: contador_nuevo, timestamp, modo } }];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -448,
+        256
+      ],
+      "id": "a075ae64-b54f-471a-b082-6f98c01c9374",
+      "name": "Calcular EMA"
+    },
+    {
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "INSERT INTO ema_estado (area, ema_actual, contador, ultima_vez)\nVALUES ('{{ $json.area }}', {{ $json.ema }}, {{ $json.lectura_num }}, NOW())\nON CONFLICT (area)\nDO UPDATE SET\n  ema_actual = CASE WHEN '{{ $json.modo }}' IN ('normal', 'ok') THEN EXCLUDED.ema_actual ELSE ema_estado.ema_actual END,\n  contador = CASE WHEN '{{ $json.modo }}' IN ('normal', 'ok') THEN EXCLUDED.contador ELSE ema_estado.contador END,\n  ultima_vez = NOW();",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.6,
+      "position": [
+        -208,
+        16
+      ],
+      "id": "1cb43839-522c-4f8b-bae0-0c5c11f776e9",
+      "name": "Guardar EMA",
+      "credentials": {
+        "postgres": {
+          "id": "95gB8C5UUHd1h0BA",
+          "name": "Postgres account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "INSERT INTO energy_history (timestamp, area, reading, ema, severity)\nVALUES ('{{ $json.timestamp }}', '{{ $json.area }}', {{ $json.kwh }}, {{ $json.ema }}, '{{ $json.severidad }}')\nON CONFLICT DO NOTHING;",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.6,
+      "position": [
+        -208,
+        496
+      ],
+      "id": "155038a0-7509-4a39-9f49-08953fd91e6f",
+      "name": "Guardar Historial",
+      "credentials": {
+        "postgres": {
+          "id": "95gB8C5UUHd1h0BA",
+          "name": "Postgres account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "rules": {
+          "values": [
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "typeValidation": "strict",
+                  "version": 3
+                },
+                "conditions": [
+                  {
+                    "id": "sc1",
+                    "leftValue": "={{ $json.desviacion > 80 }}",
+                    "rightValue": "={{ true }}",
+                    "operator": {
+                      "type": "boolean",
+                      "operation": "true",
+                      "singleValue": true
+                    }
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "Critico"
+            },
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "typeValidation": "strict",
+                  "version": 3
+                },
+                "conditions": [
+                  {
+                    "id": "sc2",
+                    "leftValue": "={{ $json.desviacion > 35 && $json.desviacion <= 80 }}",
+                    "rightValue": "={{ true }}",
+                    "operator": {
+                      "type": "boolean",
+                      "operation": "true",
+                      "singleValue": true
+                    }
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "Advertencia"
+            },
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "typeValidation": "strict",
+                  "version": 3
+                },
+                "conditions": [
+                  {
+                    "id": "sc3",
+                    "leftValue": "={{ $json.enCalentamiento === true || $json.desviacion <= 35 }}",
+                    "rightValue": "={{true}}",
+                    "operator": {
+                      "type": "boolean",
+                      "operation": "true",
+                      "singleValue": true
+                    }
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "Normal"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.switch",
+      "typeVersion": 3.4,
+      "position": [
+        -208,
+        240
+      ],
+      "id": "d1e4f87e-a35c-4a44-92ae-0029b5ee1c0c",
+      "name": "Switch Severidad"
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "={{ $env.INFLUXDB_URL }}/api/v2/write",
+        "sendQuery": true,
+        "queryParameters": {
+          "parameters": [
+            {
+              "name": "org",
+              "value": "={{ $env.INFLUXDB_ORG }}"
+            },
+            {
+              "name": "bucket",
+              "value": "={{ $env.INFLUXDB_BUCKET }}"
+            },
+            {
+              "name": "precision",
+              "value": "s"
+            }
+          ]
+        },
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Authorization",
+              "value": "=Token {{ $env.INFLUXDB_TOKEN }}"
+            }
+          ]
+        },
+        "sendBody": true,
+        "contentType": "raw",
+        "rawContentType": "Text/Plain",
+        "body": "=consumo_energetico,area={{ $('Calcular EMA').item.json.area }} kwh={{ $('Calcular EMA').item.json.kwh }},ema={{ $('Calcular EMA').item.json.ema }},desviacion={{ $('Calcular EMA').item.json.desviacion }},severidad=\"{{ $('Calcular EMA').item.json.severidad }}\" {{ Math.floor(Date.now()/1000) }}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.4,
+      "position": [
+        256,
+        64
+      ],
+      "id": "6b11636c-6eac-4c93-bab2-55df8ae33c93",
+      "name": "Escritura en InfluxDB"
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "=Eres un experto en eficiencia energética de edificios universitarios.\nSe detectó una anomalía de consumo eléctrico:\n- Área: {{ $('Switch Severidad').item.json.area }}\n- Consumo Actual: {{ $('Switch Severidad').item.json.kwh }} kWh\n- Consumo Esperado (EMA): {{ $('Switch Severidad').item.json.ema }} kWh\n- Desviación: {{ $('Switch Severidad').item.json.desviacion }}%\n- Severidad: {{ $('Switch Severidad').item.json.severidad }}\n\nResponde ÚNICAMENTE con un objeto JSON (sin markdown) con estas llaves:\n{\n  \"causa\": \"explicación breve de la causa\",\n  \"accion\": \"acción inmediata para mantenimiento\",\n  \"prioridad\": \"Alta|Media|Baja\",\n  \"diagnostico_ext\": \"resumen de 1-2 líneas\"\n}",
+        "messages": {
+          "messageValues": [
+            {
+              "message": "Actúa como motor de diagnóstico JSON. Solo responde el objeto JSON, sin texto adicional."
+            }
+          ]
+        },
+        "batching": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.chainLlm",
+      "typeVersion": 1.9,
+      "position": [
+        752,
+        240
+      ],
+      "id": "f5ecc89e-dd26-45f7-98bf-4c433601ddb4",
+      "name": "LLM Diagnóstico Anomalía",
+      "alwaysOutputData": true,
+      "onError": "continueRegularOutput"
+    },
+    {
+      "parameters": {
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatGoogleGemini",
+      "typeVersion": 1,
+      "position": [
+        752,
+        432
+      ],
+      "id": "4c50a206-a154-49e9-a2a7-ea85bf2ca402",
+      "name": "Gemini Anomalía",
+      "credentials": {
+        "googlePalmApi": {
+          "id": "5kI0fspE9szXgm6q",
+          "name": "Google Gemini(PaLM) Api account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "INSERT INTO anomalias (timestamp, area, dispositivo, severidad, valor_kwh, ema_kwh, desviacion, recomendacion)\nVALUES (NOW(), $1, $2, $3, $4, $5, $6, $7);",
+        "options": {
+          "queryReplacement": "={{ [ \n  $('Switch Severidad').item.json.area, \n  $('Switch Severidad').item.json.area.toLowerCase().includes('hvac') ? 'HVAC' : ($('Switch Severidad').item.json.area.toLowerCase().includes('luz') ? 'Iluminación' : 'General'), \n  $('Switch Severidad').item.json.severidad, \n  $('Switch Severidad').item.json.kwh, \n  $('Switch Severidad').item.json.ema, \n  $('Switch Severidad').item.json.desviacion, \n  ($json.output || $json.text || 'Diagnóstico IA no disponible (rate limit). Verificar consumo manualmente.')\n] }}"
+        }
+      },
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.6,
+      "position": [
+        1104,
+        48
+      ],
+      "id": "c671642b-3a4a-490b-962f-9761116aee0d",
+      "name": "Guardar Anomalía",
+      "credentials": {
+        "postgres": {
+          "id": "95gB8C5UUHd1h0BA",
+          "name": "Postgres account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "=https://api.telegram.org/bot{{ $env.TELEGRAM_TOKEN }}/sendMessage",
+        "sendBody": true,
+        "bodyParameters": {
+          "parameters": [
+            {
+              "name": "chat_id",
+              "value": "={{ $env.TELEGRAM_CHAT_ID }}"
+            },
+            {
+              "name": "parse_mode",
+              "value": "HTML"
+            },
+            {
+              "name": "text",
+              "value": "={{ (() => {\n    const tz = 'America/Lima';\n    const ts = $('Switch Severidad').item.json.timestamp ?? new Date().toISOString();\n    const fecha = new Date(ts).toLocaleString('es-ES', { timeZone: tz });\n    const area = $('Switch Severidad').item.json.area ?? 'N/D';\n    const sev  = ($('Switch Severidad').item.json.severidad ?? 'N/D').toString();\n    const kwh  = $('Switch Severidad').item.json.kwh ?? 'N/D';\n    const ema  = $('Switch Severidad').item.json.ema ?? 'N/D';\n    const des  = $('Switch Severidad').item.json.desviacion ?? 'N/D';\n    let ai;\n    try { const raw = $json.text || $json.output || ''; ai = JSON.parse(raw.replace(/```json/g, '').replace(/```/g, '')); }\n    catch (e) { ai = { causa: 'Diagnóstico IA no disponible', accion: 'Revisar manualmente', prioridad: 'Alta', diagnostico_ext: 'Se superó el límite de consultas al modelo. Anomalía registrada.' }; }\n    const sevEmoji = sev.toLowerCase().includes('crit') ? '🔴' : '🟠';\n    const prEmoji  = (ai.prioridad||'').toLowerCase().includes('alta') ? '🔥' : '⚠️';\n    return (\n`${sevEmoji} <b>ALERTA ENERGÉTICA: ${area}</b>\\n` +\n`━━━━━━━━━━━━━━━━━━━━\\n` +\n`🕒 <b>Fecha:</b> ${fecha}\\n` +\n`🏷️ <b>Severidad:</b> ${sev}\\n\\n` +\n`<b>📊 Métricas</b>\\n` +\n`⚡ Actual: <b>${kwh} kWh</b>\\n` +\n`📈 EMA: ${ema} kWh\\n` +\n`📉 Desviación: <b>${des}%</b>\\n\\n` +\n`<b>🧠 Diagnóstico IA</b>\\n` +\n`🧩 Causa: ${ai.causa}\\n` +\n`🛠️ Acción: ${ai.accion}\\n` +\n`${prEmoji} Prioridad: <b>${ai.prioridad}</b>\\n\\n` +\n`🤖 <i>Sistema de Monitoreo Inteligente v2</i>`\n    );\n  })() }}"
+            },
+            {
+              "name": "reply_markup",
+              "value": "={{ JSON.stringify({ inline_keyboard: [[{text:'⚠️ Ignorar', callback_data:'feedback_falso_' + ($('Switch Severidad').item.json.area || 'unknown')}, {text:'🔴 Cortar Energía', callback_data:'cut_' + ($('Switch Severidad').item.json.area || 'unknown')}],[{text:'✅ Resuelto', callback_data:'feedback_resuelto_' + ($('Switch Severidad').item.json.area || 'unknown')}, {text:'📊 Ver Estado', callback_data:'get_status'}]] }) }}"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.4,
+      "position": [
+        1104,
+        240
+      ],
+      "id": "46ab42c1-1cda-4fe6-9ec1-c492ac0ef977",
+      "name": "Alerta Telegram"
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "=http://dashboard:8000/api/mqtt/publish",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ JSON.stringify({ topic: `edificio/${$('Switch Severidad').item.json.area}/comando`, payload: { accion: 'corte_emergencia', motivo: `Anomalía ${$('Switch Severidad').item.json.severidad}: ${$('Switch Severidad').item.json.desviacion}% desviación`, origen: 'n8n_self_healing' } }) }}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.4,
+      "position": [
+        1776,
+        48
+      ],
+      "id": "1167b57e-bad3-4c91-8e0d-c83ab9a8defa",
+      "name": "Self-Healing MQTT Corte"
+    },
+    {
+      "parameters": {
+        "jsCode": "// Evaluar si la anomalía requiere corte automático de emergencia\nconst item = $('Switch Severidad').item.json;\nconst sev = (item.severidad || '').toString().toLowerCase();\nconst desviacion = Number(item.desviacion) || 0;\nconst area = item.area || '';\nconst modo = (item.modo || 'normal').toLowerCase();\n\n// No auto-cortar si es una simulación de anomalía (modo explícito del simulador)\nconst esSimulacion = modo !== 'normal' && modo !== 'ok' && modo !== 'relay_off';\n\n// Reglas de auto-corte:\n// 1. Severidad Crítica con desviación > 150% (umbral alto)\n// 2. NO es simulación de anomalía\n// 3. Área sensible (sala_servidores queda excluida por seguridad)\nconst areasProtegidas = ['sala_servidores'];\nconst requiereCorte = !esSimulacion && sev.includes('crit') && desviacion > 150 && !areasProtegidas.includes(area);\n\nreturn [{ json: { ...item, requiere_corte: requiereCorte, motivo: requiereCorte ? `Auto-corte: ${desviacion}% desviación` : 'Solo alerta' } }];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1328,
+        240
+      ],
+      "id": "d5a86114-b5e2-4182-b341-c70707210660",
+      "name": "Evaluar Self-Healing"
+    },
+    {
+      "parameters": {
+        "rules": {
+          "values": [
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": false,
+                  "typeValidation": "strict",
+                  "version": 3
+                },
+                "conditions": [
+                  {
+                    "id": "sh1",
+                    "leftValue": "={{ $json.requiere_corte }}",
+                    "rightValue": true,
+                    "operator": {
+                      "type": "boolean",
+                      "operation": "equals"
+                    }
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "Cortar"
+            },
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": false,
+                  "typeValidation": "strict",
+                  "version": 3
+                },
+                "conditions": [
+                  {
+                    "id": "sh2",
+                    "leftValue": "={{ $json.requiere_corte }}",
+                    "rightValue": false,
+                    "operator": {
+                      "type": "boolean",
+                      "operation": "equals"
+                    }
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "Solo Alerta"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.switch",
+      "typeVersion": 3.4,
+      "position": [
+        1536,
+        240
+      ],
+      "id": "525db6f7-4f3c-419b-8fd0-ab76ee2b6acf",
+      "name": "Switch Self-Healing"
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "=https://api.telegram.org/bot{{ $env.TELEGRAM_TOKEN }}/sendMessage",
+        "sendBody": true,
+        "bodyParameters": {
+          "parameters": [
+            {
+              "name": "chat_id",
+              "value": "={{ $env.TELEGRAM_CHAT_ID }}"
+            },
+            {
+              "name": "parse_mode",
+              "value": "HTML"
+            },
+            {
+              "name": "text",
+              "value": "=🚨 <b>CORTE DE EMERGENCIA AUTOMÁTICO</b>\n━━━━━━━━━━━━━━━━━━━━\n📍 Área: <b>{{ $json.area }}</b>\n⚡ Consumo: <b>{{ $json.kwh }} kWh</b>\n📉 Desviación: <b>{{ $json.desviacion }}%</b>\n\n🔴 Se ha ejecutado un <b>corte automático</b> del suministro eléctrico.\n💡 Motivo: {{ $json.motivo }}\n\n🤖 <i>Sistema Self-Healing v1</i>"
+            },
+            {
+              "name": "reply_markup",
+              "value": "={{ JSON.stringify({ inline_keyboard: [ [{text:'🟢 Restaurar Energía', callback_data:'restore_' + $json.area}], [{text:'📊 Ver Estado', callback_data:'get_status'}, {text:'🚨 Ver Anomalías', callback_data:'get_anomalias'}] ] }) }}"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.4,
+      "position": [
+        1984,
+        48
+      ],
+      "id": "9db5393b-9195-4f6f-8f03-c5ab0a0c7a8f",
+      "name": "Notificar Corte Telegram"
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "={{ $env.N8N_WEBHOOK_URL || 'http://n8n:5678' }}/webhook/agent-orchestrator",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ JSON.stringify({ area: $('Calcular EMA').item.json.area, kwh: $('Calcular EMA').item.json.kwh, ema: $('Calcular EMA').item.json.ema, desviacion: $('Calcular EMA').item.json.desviacion, severidad: $('Calcular EMA').item.json.severidad, timestamp: $('Calcular EMA').item.json.timestamp }) }}",
+        "options": {
+          "allowUnauthorizedCerts": true,
+          "timeout": 10000
+        }
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.4,
+      "position": [
+        -208,
+        -176
+      ],
+      "id": "d7a799c1-3d9c-4474-bad9-2bd079f7b82b",
+      "name": "Llamar Orquestador",
+      "onError": "continueRegularOutput"
+    },
+    {
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "SELECT CASE WHEN COUNT(*) = 0 THEN 1 ELSE 0 END as puede_alertar FROM anomalias WHERE area = '{{ $('Switch Severidad').item.json.area }}' AND timestamp > NOW() - INTERVAL '3 minutes';",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.6,
+      "position": [
+        256,
+        256
+      ],
+      "id": "9ef5a43b-0b5a-4463-b867-6c165c0a9707",
+      "name": "Verificar Throttle",
+      "alwaysOutputData": true,
+      "credentials": {
+        "postgres": {
+          "id": "95gB8C5UUHd1h0BA",
+          "name": "Postgres account"
+        }
+      },
+      "onError": "continueRegularOutput"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "typeValidation": "loose",
+            "version": 3
+          },
+          "conditions": [
+            {
+              "id": "throttle_cond",
+              "leftValue": "={{ Number($json.puede_alertar || 0) }}",
+              "rightValue": 1,
+              "operator": {
+                "type": "number",
+                "operation": "equals"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [
+        480,
+        256
+      ],
+      "id": "bc21065b-c390-4879-9442-e9a880ca267b",
+      "name": "Puede Alertar?"
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "MQTT Trigger": {
+      "main": [
+        [
+          {
+            "node": "Parsear MQTT",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Parsear MQTT": {
+      "main": [
+        [
+          {
+            "node": "Obtener EMA",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Obtener EMA": {
+      "main": [
+        [
+          {
+            "node": "Calcular EMA",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Calcular EMA": {
+      "main": [
+        [
+          {
+            "node": "Guardar EMA",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Guardar Historial",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Switch Severidad",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Llamar Orquestador",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Guardar Historial": {
+      "main": [
+        [
+          {
+            "node": "Escritura en InfluxDB",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Switch Severidad": {
+      "main": [
+        [
+          {
+            "node": "Verificar Throttle",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Escritura en InfluxDB",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Escritura en InfluxDB",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Escritura en InfluxDB",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Verificar Throttle": {
+      "main": [
+        [
+          {
+            "node": "Puede Alertar?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Puede Alertar?": {
+      "main": [
+        [
+          {
+            "node": "LLM Diagnóstico Anomalía",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Gemini Anomalía": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "LLM Diagnóstico Anomalía",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "LLM Diagnóstico Anomalía": {
+      "main": [
+        [
+          {
+            "node": "Guardar Anomalía",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Alerta Telegram",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Alerta Telegram": {
+      "main": [
+        [
+          {
+            "node": "Evaluar Self-Healing",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Evaluar Self-Healing": {
+      "main": [
+        [
+          {
+            "node": "Switch Self-Healing",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Switch Self-Healing": {
+      "main": [
+        [
+          {
+            "node": "Self-Healing MQTT Corte",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        []
+      ]
+    },
+    "Self-Healing MQTT Corte": {
+      "main": [
+        [
+          {
+            "node": "Notificar Corte Telegram",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Llamar Orquestador": {
+      "main": [
+        []
+      ]
+    },
+    "Guardar EMA": {
+      "main": [
+        []
+      ]
+    },
+    "Escritura en InfluxDB": {
+      "main": [
+        []
+      ]
+    },
+    "Guardar Anomalía": {
+      "main": [
+        []
+      ]
+    }
+  },
+  "active": true,
+  "settings": {
+    "executionOrder": "v1",
+    "binaryMode": "separate",
+    "availableInMCP": false
+  },
+  "versionId": "32873f6d-7a5a-4598-b710-66a6d497e6d2",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "702eb394707c81656d9b2dd11f9fbd9990280d4e9ae9cafef5221f507e0f126f"
+  },
+  "id": "8NCKDlc1IvYDGCFA",
+  "tags": []
+}

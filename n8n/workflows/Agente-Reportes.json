@@ -1,5 +1,4 @@
 {
-  "id": "wf09",
   "name": "Agente-Reportes",
   "nodes": [
     {
@@ -11,8 +10,11 @@
       },
       "type": "n8n-nodes-base.webhook",
       "typeVersion": 2,
-      "position": [-600, 300],
-      "id": "rep-webhook-id",
+      "position": [
+        -640,
+        64
+      ],
+      "id": "85f2be50-17a1-46ee-a7a4-adfaf6c6e13e",
       "name": "Webhook Reportes",
       "webhookId": "agent-reports"
     },
@@ -20,16 +22,25 @@
       "parameters": {
         "rule": {
           "interval": [
-            { "triggerAtHour": 6 },
-            { "triggerAtHour": 14 },
-            { "triggerAtHour": 22 }
+            {
+              "triggerAtHour": 6
+            },
+            {
+              "triggerAtHour": 14
+            },
+            {
+              "triggerAtHour": 22
+            }
           ]
         }
       },
       "type": "n8n-nodes-base.scheduleTrigger",
       "typeVersion": 1.2,
-      "position": [-600, 550],
-      "id": "rep-schedule-id",
+      "position": [
+        -640,
+        240
+      ],
+      "id": "1dc88d37-381d-484a-91b8-34b539cbf953",
       "name": "Trigger Turno 6/14/22h"
     },
     {
@@ -38,8 +49,11 @@
       },
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
-      "position": [-380, 400],
-      "id": "rep-determine-type-id",
+      "position": [
+        -416,
+        160
+      ],
+      "id": "091d6b6d-5ece-420e-923e-3cc2dd2dd0be",
       "name": "Determinar Tipo Reporte"
     },
     {
@@ -48,9 +62,21 @@
           "values": [
             {
               "conditions": {
-                "options": { "caseSensitive": false, "typeValidation": "strict", "version": 3 },
+                "options": {
+                  "caseSensitive": false,
+                  "typeValidation": "strict",
+                  "version": 3
+                },
                 "conditions": [
-                  { "id": "rt1", "leftValue": "={{ $json.report_type }}", "rightValue": "shift", "operator": { "type": "string", "operation": "equals" } }
+                  {
+                    "id": "rt1",
+                    "leftValue": "={{ $json.report_type }}",
+                    "rightValue": "shift",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals"
+                    }
+                  }
                 ],
                 "combinator": "and"
               },
@@ -59,9 +85,21 @@
             },
             {
               "conditions": {
-                "options": { "caseSensitive": false, "typeValidation": "strict", "version": 3 },
+                "options": {
+                  "caseSensitive": false,
+                  "typeValidation": "strict",
+                  "version": 3
+                },
                 "conditions": [
-                  { "id": "rt2", "leftValue": "={{ $json.report_type }}", "rightValue": "incident_resolved", "operator": { "type": "string", "operation": "equals" } }
+                  {
+                    "id": "rt2",
+                    "leftValue": "={{ $json.report_type }}",
+                    "rightValue": "incident_resolved",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals"
+                    }
+                  }
                 ],
                 "combinator": "and"
               },
@@ -70,9 +108,21 @@
             },
             {
               "conditions": {
-                "options": { "caseSensitive": false, "typeValidation": "strict", "version": 3 },
+                "options": {
+                  "caseSensitive": false,
+                  "typeValidation": "strict",
+                  "version": 3
+                },
                 "conditions": [
-                  { "id": "rt3", "leftValue": "={{ $json.report_type }}", "rightValue": "weekly", "operator": { "type": "string", "operation": "equals" } }
+                  {
+                    "id": "rt3",
+                    "leftValue": "={{ $json.report_type }}",
+                    "rightValue": "weekly",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals"
+                    }
+                  }
                 ],
                 "combinator": "and"
               },
@@ -85,8 +135,11 @@
       },
       "type": "n8n-nodes-base.switch",
       "typeVersion": 3.4,
-      "position": [-160, 400],
-      "id": "rep-switch-type-id",
+      "position": [
+        -208,
+        144
+      ],
+      "id": "70d051c0-f1ab-4f67-b195-13fca05294b9",
       "name": "Switch Tipo Reporte"
     },
     {
@@ -97,13 +150,16 @@
       },
       "type": "n8n-nodes-base.postgres",
       "typeVersion": 2.6,
-      "position": [80, 200],
+      "position": [
+        48,
+        -48
+      ],
       "alwaysOutputData": true,
-      "id": "rep-shift-data-id",
+      "id": "ac63597f-6c2c-48d0-89d2-10c2569beb80",
       "name": "Datos Turno",
       "credentials": {
         "postgres": {
-          "id": "I7MdTzT2OpsQLA7O",
+          "id": "95gB8C5UUHd1h0BA",
           "name": "Postgres account"
         }
       }
@@ -114,8 +170,11 @@
       },
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
-      "position": [300, 200],
-      "id": "rep-format-shift-id",
+      "position": [
+        272,
+        -48
+      ],
+      "id": "d153b1e6-097f-4ba9-958b-2a981a3a3ca3",
       "name": "Formatear Reporte Turno"
     },
     {
@@ -124,8 +183,11 @@
       },
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
-      "position": [80, 400],
-      "id": "rep-incident-report-id",
+      "position": [
+        48,
+        160
+      ],
+      "id": "8b4c8aa6-b42d-412c-87cc-2960e90e4d83",
       "name": "Reporte Post-Incidente"
     },
     {
@@ -136,13 +198,16 @@
       },
       "type": "n8n-nodes-base.postgres",
       "typeVersion": 2.6,
-      "position": [80, 600],
+      "position": [
+        48,
+        352
+      ],
       "alwaysOutputData": true,
-      "id": "rep-weekly-data-id",
+      "id": "e6b4baa4-3ace-452f-b16b-f2fd29f2c99a",
       "name": "Datos Semanales",
       "credentials": {
         "postgres": {
-          "id": "I7MdTzT2OpsQLA7O",
+          "id": "95gB8C5UUHd1h0BA",
           "name": "Postgres account"
         }
       }
@@ -155,13 +220,16 @@
       },
       "type": "n8n-nodes-base.postgres",
       "typeVersion": 2.6,
-      "position": [80, 800],
+      "position": [
+        48,
+        560
+      ],
       "alwaysOutputData": true,
-      "id": "rep-weekly-incidents-id",
+      "id": "9bc5280a-6856-4976-a6b1-4884f12cb358",
       "name": "Incidentes Semanales",
       "credentials": {
         "postgres": {
-          "id": "I7MdTzT2OpsQLA7O",
+          "id": "95gB8C5UUHd1h0BA",
           "name": "Postgres account"
         }
       }
@@ -172,8 +240,11 @@
       },
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
-      "position": [300, 700],
-      "id": "rep-format-weekly-id",
+      "position": [
+        272,
+        464
+      ],
+      "id": "23b5ce41-09dd-4f87-9583-cbff5923970d",
       "name": "Formatear Reporte Semanal"
     },
     {
@@ -183,18 +254,33 @@
         "sendBody": true,
         "bodyParameters": {
           "parameters": [
-            { "name": "chat_id", "value": "={{ $env.TELEGRAM_CHAT_ID }}" },
-            { "name": "parse_mode", "value": "HTML" },
-            { "name": "text", "value": "={{ $json.text }}" },
-            { "name": "reply_markup", "value": "={{ JSON.stringify({ inline_keyboard: [[{text:'⬅️ Menú', callback_data:'/start'}]] }) }}" }
+            {
+              "name": "chat_id",
+              "value": "={{ $env.TELEGRAM_CHAT_ID }}"
+            },
+            {
+              "name": "parse_mode",
+              "value": "HTML"
+            },
+            {
+              "name": "text",
+              "value": "={{ $json.text }}"
+            },
+            {
+              "name": "reply_markup",
+              "value": "={{ JSON.stringify({ inline_keyboard: [[{text:'⬅️ Menú', callback_data:'/start'}]] }) }}"
+            }
           ]
         },
         "options": {}
       },
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 4.4,
-      "position": [560, 400],
-      "id": "rep-send-telegram-id",
+      "position": [
+        528,
+        160
+      ],
+      "id": "0928698a-6073-440a-b6dc-8cc379e45871",
       "name": "Enviar Reporte Telegram"
     },
     {
@@ -207,13 +293,16 @@
       },
       "type": "n8n-nodes-base.postgres",
       "typeVersion": 2.6,
-      "position": [560, 600],
+      "position": [
+        752,
+        -48
+      ],
       "alwaysOutputData": true,
-      "id": "rep-log-id",
+      "id": "a4a247fe-4d49-42ef-92fa-493dd47b9c45",
       "name": "Log Reporte",
       "credentials": {
         "postgres": {
-          "id": "I7MdTzT2OpsQLA7O",
+          "id": "95gB8C5UUHd1h0BA",
           "name": "Postgres account"
         }
       }
@@ -224,79 +313,202 @@
       },
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
-      "position": [780, 400],
-      "id": "rep-response-id",
+      "position": [
+        752,
+        160
+      ],
+      "id": "70887184-a6f8-4d46-8dbf-0146727d636a",
       "name": "Respuesta Reportes"
     },
     {
       "parameters": {
         "respondWith": "json",
         "responseBody": "={{ JSON.stringify({status: 'accepted', agent: 'reports'}) }}",
-        "options": { "responseCode": 202 }
+        "options": {
+          "responseCode": 202
+        }
       },
       "type": "n8n-nodes-base.respondToWebhook",
       "typeVersion": 1.1,
-      "position": [-600, 500],
-      "id": "report-respond-id",
+      "position": [
+        -416,
+        -64
+      ],
+      "id": "ba1f8b18-07c9-41cd-89d3-0416f7f83463",
       "name": "Respuesta Rápida Report"
     }
   ],
+  "pinData": {},
   "connections": {
     "Webhook Reportes": {
-      "main": [[
-        { "node": "Respuesta Rápida Report", "type": "main", "index": 0 },
-        { "node": "Determinar Tipo Reporte", "type": "main", "index": 0 }
-      ]]
+      "main": [
+        [
+          {
+            "node": "Respuesta Rápida Report",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Determinar Tipo Reporte",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
     },
     "Trigger Turno 6/14/22h": {
-      "main": [[{ "node": "Determinar Tipo Reporte", "type": "main", "index": 0 }]]
+      "main": [
+        [
+          {
+            "node": "Determinar Tipo Reporte",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
     },
     "Determinar Tipo Reporte": {
-      "main": [[{ "node": "Switch Tipo Reporte", "type": "main", "index": 0 }]]
+      "main": [
+        [
+          {
+            "node": "Switch Tipo Reporte",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
     },
     "Switch Tipo Reporte": {
       "main": [
-        [{ "node": "Datos Turno", "type": "main", "index": 0 }],
-        [{ "node": "Reporte Post-Incidente", "type": "main", "index": 0 }],
         [
-          { "node": "Datos Semanales", "type": "main", "index": 0 },
-          { "node": "Incidentes Semanales", "type": "main", "index": 0 }
+          {
+            "node": "Datos Turno",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Reporte Post-Incidente",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Datos Semanales",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Incidentes Semanales",
+            "type": "main",
+            "index": 0
+          }
         ]
       ]
     },
     "Datos Turno": {
-      "main": [[{ "node": "Formatear Reporte Turno", "type": "main", "index": 0 }]]
+      "main": [
+        [
+          {
+            "node": "Formatear Reporte Turno",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
     },
     "Formatear Reporte Turno": {
-      "main": [[{ "node": "Enviar Reporte Telegram", "type": "main", "index": 0 }]]
+      "main": [
+        [
+          {
+            "node": "Enviar Reporte Telegram",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
     },
     "Reporte Post-Incidente": {
-      "main": [[{ "node": "Enviar Reporte Telegram", "type": "main", "index": 0 }]]
+      "main": [
+        [
+          {
+            "node": "Enviar Reporte Telegram",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
     },
     "Datos Semanales": {
-      "main": [[{ "node": "Formatear Reporte Semanal", "type": "main", "index": 0 }]]
+      "main": [
+        [
+          {
+            "node": "Formatear Reporte Semanal",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
     },
     "Incidentes Semanales": {
-      "main": [[{ "node": "Formatear Reporte Semanal", "type": "main", "index": 0 }]]
+      "main": [
+        [
+          {
+            "node": "Formatear Reporte Semanal",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
     },
     "Formatear Reporte Semanal": {
-      "main": [[{ "node": "Enviar Reporte Telegram", "type": "main", "index": 0 }]]
+      "main": [
+        [
+          {
+            "node": "Enviar Reporte Telegram",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
     },
     "Enviar Reporte Telegram": {
-      "main": [[
-        { "node": "Log Reporte", "type": "main", "index": 0 },
-        { "node": "Respuesta Reportes", "type": "main", "index": 0 }
-      ]]
-    },
-    "Log Reporte": {
-      "main": [[]]
+      "main": [
+        [
+          {
+            "node": "Log Reporte",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Respuesta Reportes",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
     }
   },
   "active": true,
   "settings": {
-    "executionOrder": "v2",
-    "callerPolicy": "workflowsFromSameOwner"
+    "executionOrder": "v1",
+    "binaryMode": "separate",
+    "availableInMCP": false
   },
-  "meta": { "templateCredsSetupCompleted": true },
-  "tags": [{ "name": "agents" }]
+  "versionId": "31f57d2f-3fd4-45d3-9266-02e2b483db23",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "702eb394707c81656d9b2dd11f9fbd9990280d4e9ae9cafef5221f507e0f126f"
+  },
+  "id": "Q5QGD4az2krkyMIu",
+  "tags": [
+    {
+      "updatedAt": "2026-03-01T20:17:37.807Z",
+      "createdAt": "2026-03-01T20:17:37.807Z",
+      "id": "FGZA1HGwSDRQyaHB",
+      "name": "agente"
+    }
+  ]
 }

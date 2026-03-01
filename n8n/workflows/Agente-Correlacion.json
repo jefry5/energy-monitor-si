@@ -1,5 +1,4 @@
 {
-  "id": "wf06",
   "name": "Agente-Correlacion",
   "nodes": [
     {
@@ -11,8 +10,11 @@
       },
       "type": "n8n-nodes-base.webhook",
       "typeVersion": 2,
-      "position": [-600, 300],
-      "id": "corr-webhook-id",
+      "position": [
+        0,
+        0
+      ],
+      "id": "5dceaac3-137b-4e75-b8ea-676e74f4c1d4",
       "name": "Webhook Correlación",
       "webhookId": "agent-correlation"
     },
@@ -24,13 +26,16 @@
       },
       "type": "n8n-nodes-base.postgres",
       "typeVersion": 2.6,
-      "position": [-380, 300],
+      "position": [
+        224,
+        0
+      ],
       "alwaysOutputData": true,
-      "id": "corr-recent-anomalies-id",
+      "id": "515e7874-ae33-4ca2-ba42-008306a4a569",
       "name": "Anomalías Ventana 5min",
       "credentials": {
         "postgres": {
-          "id": "I7MdTzT2OpsQLA7O",
+          "id": "95gB8C5UUHd1h0BA",
           "name": "Postgres account"
         }
       }
@@ -43,13 +48,16 @@
       },
       "type": "n8n-nodes-base.postgres",
       "typeVersion": 2.6,
-      "position": [-380, 500],
+      "position": [
+        224,
+        224
+      ],
       "alwaysOutputData": true,
-      "id": "corr-cooldown-check-id",
+      "id": "a02281ef-e953-4fef-97a6-c5aa0c998880",
       "name": "Verificar Cooldown",
       "credentials": {
         "postgres": {
-          "id": "I7MdTzT2OpsQLA7O",
+          "id": "95gB8C5UUHd1h0BA",
           "name": "Postgres account"
         }
       }
@@ -60,8 +68,11 @@
       },
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
-      "position": [-100, 400],
-      "id": "corr-analyze-id",
+      "position": [
+        512,
+        0
+      ],
+      "id": "2de8e342-9acb-4393-ac4b-d09e6e9eb3e2",
       "name": "Analizar Correlación"
     },
     {
@@ -70,9 +81,21 @@
           "values": [
             {
               "conditions": {
-                "options": { "caseSensitive": false, "typeValidation": "strict", "version": 3 },
+                "options": {
+                  "caseSensitive": false,
+                  "typeValidation": "strict",
+                  "version": 3
+                },
                 "conditions": [
-                  { "id": "cs1", "leftValue": "={{ $json.save_correlation }}", "rightValue": true, "operator": { "type": "boolean", "operation": "equals" } }
+                  {
+                    "id": "cs1",
+                    "leftValue": "={{ $json.save_correlation }}",
+                    "rightValue": true,
+                    "operator": {
+                      "type": "boolean",
+                      "operation": "equals"
+                    }
+                  }
                 ],
                 "combinator": "and"
               },
@@ -81,9 +104,21 @@
             },
             {
               "conditions": {
-                "options": { "caseSensitive": false, "typeValidation": "strict", "version": 3 },
+                "options": {
+                  "caseSensitive": false,
+                  "typeValidation": "strict",
+                  "version": 3
+                },
                 "conditions": [
-                  { "id": "cs2", "leftValue": "={{ !$json.save_correlation }}", "rightValue": true, "operator": { "type": "boolean", "operation": "equals" } }
+                  {
+                    "id": "cs2",
+                    "leftValue": "={{ !$json.save_correlation }}",
+                    "rightValue": true,
+                    "operator": {
+                      "type": "boolean",
+                      "operation": "equals"
+                    }
+                  }
                 ],
                 "combinator": "and"
               },
@@ -96,8 +131,11 @@
       },
       "type": "n8n-nodes-base.switch",
       "typeVersion": 3.4,
-      "position": [140, 400],
-      "id": "corr-switch-save-id",
+      "position": [
+        768,
+        0
+      ],
+      "id": "69971461-d87f-494e-8811-c08b9c6c99be",
       "name": "¿Guardar Correlación?"
     },
     {
@@ -110,13 +148,16 @@
       },
       "type": "n8n-nodes-base.postgres",
       "typeVersion": 2.6,
-      "position": [380, 300],
+      "position": [
+        992,
+        -160
+      ],
       "alwaysOutputData": true,
-      "id": "corr-save-db-id",
+      "id": "4b967a55-a48b-47b7-bce3-9fb4d9c92e9d",
       "name": "Guardar Correlación DB",
       "credentials": {
         "postgres": {
-          "id": "I7MdTzT2OpsQLA7O",
+          "id": "95gB8C5UUHd1h0BA",
           "name": "Postgres account"
         }
       }
@@ -128,17 +169,29 @@
         "sendBody": true,
         "bodyParameters": {
           "parameters": [
-            { "name": "chat_id", "value": "={{ $env.TELEGRAM_CHAT_ID }}" },
-            { "name": "parse_mode", "value": "HTML" },
-            { "name": "text", "value": "={{ $('Analizar Correlación').first().json.message }}" }
+            {
+              "name": "chat_id",
+              "value": "={{ $env.TELEGRAM_CHAT_ID }}"
+            },
+            {
+              "name": "parse_mode",
+              "value": "HTML"
+            },
+            {
+              "name": "text",
+              "value": "={{ $('Analizar Correlación').first().json.message }}"
+            }
           ]
         },
         "options": {}
       },
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 4.4,
-      "position": [600, 300],
-      "id": "corr-telegram-id",
+      "position": [
+        1184,
+        -160
+      ],
+      "id": "f45b3e8a-94cf-4cfd-96b0-0871b0e59fde",
       "name": "Alerta Correlación Telegram"
     },
     {
@@ -151,13 +204,16 @@
       },
       "type": "n8n-nodes-base.postgres",
       "typeVersion": 2.6,
-      "position": [380, 550],
+      "position": [
+        768,
+        208
+      ],
       "alwaysOutputData": true,
-      "id": "corr-log-id",
+      "id": "bae62f68-69de-4747-818c-56f8c9bfb9e8",
       "name": "Log Correlación",
       "credentials": {
         "postgres": {
-          "id": "I7MdTzT2OpsQLA7O",
+          "id": "95gB8C5UUHd1h0BA",
           "name": "Postgres account"
         }
       }
@@ -168,64 +224,151 @@
       },
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
-      "position": [600, 550],
-      "id": "corr-response-id",
+      "position": [
+        1408,
+        16
+      ],
+      "id": "1e61acd4-3644-4766-b9d8-a2f54cb4bb7c",
       "name": "Respuesta Correlación"
     },
     {
       "parameters": {
         "respondWith": "json",
         "responseBody": "={{ JSON.stringify({status: 'accepted', agent: 'correlation'}) }}",
-        "options": { "responseCode": 202 }
+        "options": {
+          "responseCode": 202
+        }
       },
       "type": "n8n-nodes-base.respondToWebhook",
       "typeVersion": 1.1,
-      "position": [-600, 500],
-      "id": "corr-respond-id",
+      "position": [
+        224,
+        -208
+      ],
+      "id": "b0490bef-5c1e-47c7-a61f-026766586e34",
       "name": "Respuesta Rápida Corr"
     }
   ],
+  "pinData": {},
   "connections": {
     "Webhook Correlación": {
-      "main": [[
-        { "node": "Respuesta Rápida Corr", "type": "main", "index": 0 },
-        { "node": "Anomalías Ventana 5min", "type": "main", "index": 0 },
-        { "node": "Verificar Cooldown", "type": "main", "index": 0 }
-      ]]
+      "main": [
+        [
+          {
+            "node": "Respuesta Rápida Corr",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Anomalías Ventana 5min",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Verificar Cooldown",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
     },
     "Anomalías Ventana 5min": {
-      "main": [[{ "node": "Analizar Correlación", "type": "main", "index": 0 }]]
+      "main": [
+        [
+          {
+            "node": "Analizar Correlación",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
     },
     "Verificar Cooldown": {
-      "main": [[{ "node": "Analizar Correlación", "type": "main", "index": 0 }]]
+      "main": [
+        [
+          {
+            "node": "Analizar Correlación",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
     },
     "Analizar Correlación": {
-      "main": [[
-        { "node": "¿Guardar Correlación?", "type": "main", "index": 0 },
-        { "node": "Log Correlación", "type": "main", "index": 0 }
-      ]]
+      "main": [
+        [
+          {
+            "node": "¿Guardar Correlación?",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Log Correlación",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
     },
     "¿Guardar Correlación?": {
       "main": [
-        [{ "node": "Guardar Correlación DB", "type": "main", "index": 0 }],
-        [{ "node": "Respuesta Correlación", "type": "main", "index": 0 }]
+        [
+          {
+            "node": "Guardar Correlación DB",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Respuesta Correlación",
+            "type": "main",
+            "index": 0
+          }
+        ]
       ]
     },
     "Guardar Correlación DB": {
-      "main": [[{ "node": "Alerta Correlación Telegram", "type": "main", "index": 0 }]]
+      "main": [
+        [
+          {
+            "node": "Alerta Correlación Telegram",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
     },
     "Alerta Correlación Telegram": {
-      "main": [[{ "node": "Respuesta Correlación", "type": "main", "index": 0 }]]
-    },
-    "Log Correlación": {
-      "main": [[]]
+      "main": [
+        [
+          {
+            "node": "Respuesta Correlación",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
     }
   },
   "active": true,
   "settings": {
-    "executionOrder": "v2",
-    "callerPolicy": "workflowsFromSameOwner"
+    "executionOrder": "v1",
+    "binaryMode": "separate",
+    "availableInMCP": false
   },
-  "meta": { "templateCredsSetupCompleted": true },
-  "tags": [{ "name": "agents" }]
+  "versionId": "3fa9c2cc-e99f-4882-bc36-b1ab8f0f4107",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "702eb394707c81656d9b2dd11f9fbd9990280d4e9ae9cafef5221f507e0f126f"
+  },
+  "id": "5axNbvSZ2SgYe5mJ",
+  "tags": [
+    {
+      "updatedAt": "2026-03-01T20:17:37.807Z",
+      "createdAt": "2026-03-01T20:17:37.807Z",
+      "id": "FGZA1HGwSDRQyaHB",
+      "name": "agente"
+    }
+  ]
 }

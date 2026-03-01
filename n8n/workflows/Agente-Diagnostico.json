@@ -1,5 +1,4 @@
 {
-  "id": "wf05",
   "name": "Agente-Diagnostico",
   "nodes": [
     {
@@ -11,8 +10,11 @@
       },
       "type": "n8n-nodes-base.webhook",
       "typeVersion": 2,
-      "position": [-600, 300],
-      "id": "diag-webhook-id",
+      "position": [
+        -576,
+        80
+      ],
+      "id": "bef27090-9d0f-44dc-b36f-330944dd566a",
       "name": "Webhook Diagnóstico",
       "webhookId": "agent-diagnosis"
     },
@@ -24,13 +26,16 @@
       },
       "type": "n8n-nodes-base.postgres",
       "typeVersion": 2.6,
-      "position": [-380, 200],
+      "position": [
+        -352,
+        -160
+      ],
       "alwaysOutputData": true,
-      "id": "diag-history-24h-id",
+      "id": "b99efd5e-2256-4947-89ad-947385fa1f29",
       "name": "Historial 24h",
       "credentials": {
         "postgres": {
-          "id": "I7MdTzT2OpsQLA7O",
+          "id": "95gB8C5UUHd1h0BA",
           "name": "Postgres account"
         }
       }
@@ -43,13 +48,16 @@
       },
       "type": "n8n-nodes-base.postgres",
       "typeVersion": 2.6,
-      "position": [-380, 450],
+      "position": [
+        -352,
+        288
+      ],
       "alwaysOutputData": true,
-      "id": "diag-hourly-trend-id",
+      "id": "07578528-a3b0-45a5-b814-f0b937f73d3e",
       "name": "Tendencia Horaria",
       "credentials": {
         "postgres": {
-          "id": "I7MdTzT2OpsQLA7O",
+          "id": "95gB8C5UUHd1h0BA",
           "name": "Postgres account"
         }
       }
@@ -62,13 +70,16 @@
       },
       "type": "n8n-nodes-base.postgres",
       "typeVersion": 2.6,
-      "position": [-380, 650],
+      "position": [
+        -352,
+        480
+      ],
       "alwaysOutputData": true,
-      "id": "diag-recent-anomalies-id",
+      "id": "d2c056e6-3229-49f7-9469-1ade06e09d84",
       "name": "Anomalías Recientes",
       "credentials": {
         "postgres": {
-          "id": "I7MdTzT2OpsQLA7O",
+          "id": "95gB8C5UUHd1h0BA",
           "name": "Postgres account"
         }
       }
@@ -81,8 +92,11 @@
       },
       "type": "n8n-nodes-base.merge",
       "typeVersion": 3.1,
-      "position": [-100, 300],
-      "id": "diag-merge-id",
+      "position": [
+        -80,
+        80
+      ],
+      "id": "86873ed9-7049-4715-a5bb-fe4baf3e9337",
       "name": "Unir Datos Diagnóstico"
     },
     {
@@ -91,8 +105,11 @@
       },
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
-      "position": [140, 300],
-      "id": "diag-classify-id",
+      "position": [
+        144,
+        80
+      ],
+      "id": "edfa7164-b522-447f-a304-2855f35c3e61",
       "name": "Clasificar Patrón"
     },
     {
@@ -105,13 +122,16 @@
       },
       "type": "n8n-nodes-base.postgres",
       "typeVersion": 2.6,
-      "position": [380, 400],
+      "position": [
+        368,
+        -160
+      ],
       "alwaysOutputData": true,
-      "id": "diag-log-id",
+      "id": "d806e9a6-235d-4b9a-b41d-d76712fbaed2",
       "name": "Log Diagnóstico",
       "credentials": {
         "postgres": {
-          "id": "I7MdTzT2OpsQLA7O",
+          "id": "95gB8C5UUHd1h0BA",
           "name": "Postgres account"
         }
       }
@@ -122,56 +142,127 @@
       },
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
-      "position": [600, 300],
-      "id": "diag-response-id",
+      "position": [
+        368,
+        80
+      ],
+      "id": "af94cd05-6cc4-4eb8-91d7-64c1bad87eba",
       "name": "Respuesta Diagnóstico"
     },
     {
       "parameters": {
         "respondWith": "json",
         "responseBody": "={{ JSON.stringify({status: 'accepted', agent: 'diagnosis'}) }}",
-        "options": { "responseCode": 202 }
+        "options": {
+          "responseCode": 202
+        }
       },
       "type": "n8n-nodes-base.respondToWebhook",
       "typeVersion": 1.1,
-      "position": [-600, 500],
-      "id": "diag-respond-id",
+      "position": [
+        -352,
+        80
+      ],
+      "id": "745a53df-0b8e-4759-94d6-cfcd1bce7111",
       "name": "Respuesta Rápida Diag"
     }
   ],
+  "pinData": {},
   "connections": {
     "Webhook Diagnóstico": {
-      "main": [[
-        { "node": "Respuesta Rápida Diag", "type": "main", "index": 0 },
-        { "node": "Historial 24h", "type": "main", "index": 0 },
-        { "node": "Tendencia Horaria", "type": "main", "index": 0 },
-        { "node": "Anomalías Recientes", "type": "main", "index": 0 }
-      ]]
+      "main": [
+        [
+          {
+            "node": "Respuesta Rápida Diag",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Historial 24h",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Tendencia Horaria",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Anomalías Recientes",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
     },
     "Historial 24h": {
-      "main": [[{ "node": "Unir Datos Diagnóstico", "type": "main", "index": 0 }]]
+      "main": [
+        [
+          {
+            "node": "Unir Datos Diagnóstico",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
     },
     "Tendencia Horaria": {
-      "main": [[{ "node": "Unir Datos Diagnóstico", "type": "main", "index": 1 }]]
+      "main": [
+        [
+          {
+            "node": "Unir Datos Diagnóstico",
+            "type": "main",
+            "index": 1
+          }
+        ]
+      ]
     },
     "Unir Datos Diagnóstico": {
-      "main": [[{ "node": "Clasificar Patrón", "type": "main", "index": 0 }]]
+      "main": [
+        [
+          {
+            "node": "Clasificar Patrón",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
     },
     "Clasificar Patrón": {
-      "main": [[
-        { "node": "Log Diagnóstico", "type": "main", "index": 0 },
-        { "node": "Respuesta Diagnóstico", "type": "main", "index": 0 }
-      ]]
-    },
-    "Log Diagnóstico": {
-      "main": [[]]
+      "main": [
+        [
+          {
+            "node": "Log Diagnóstico",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Respuesta Diagnóstico",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
     }
   },
   "active": true,
   "settings": {
-    "executionOrder": "v2",
-    "callerPolicy": "workflowsFromSameOwner"
+    "executionOrder": "v1",
+    "binaryMode": "separate",
+    "availableInMCP": false
   },
-  "meta": { "templateCredsSetupCompleted": true },
-  "tags": [{ "name": "agents" }]
+  "versionId": "3ecf37fa-8772-4321-85e9-451d1b001401",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "702eb394707c81656d9b2dd11f9fbd9990280d4e9ae9cafef5221f507e0f126f"
+  },
+  "id": "aSFHmWHgyWWzQUK2",
+  "tags": [
+    {
+      "updatedAt": "2026-03-01T20:17:37.807Z",
+      "createdAt": "2026-03-01T20:17:37.807Z",
+      "id": "FGZA1HGwSDRQyaHB",
+      "name": "agente"
+    }
+  ]
 }
