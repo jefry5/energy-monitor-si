@@ -22,6 +22,12 @@ from typing import Dict, Final, List, Optional
 from dotenv import load_dotenv
 import paho.mqtt.client as mqtt
 
+from fastapi import FastAPI, HTTPException
+from pydantic import BaseModel
+
+app = FastAPI(title="Energy Monitor Simulator API", version="3.0.0")
+
+
 load_dotenv()
 
 # ──────────────────────────────────────────────
@@ -565,6 +571,82 @@ def main() -> None:
         client.loop_stop()
         client.disconnect()
         log.info("✅  Simulator stopped cleanly after %d cycles.", cycle)
+
+# ──────────────────────────────────────────────
+# REST API — Endpoint de Predicción ML (Experimental)
+# ──────────────────────────────────────────────
+
+class PredictRequest(BaseModel):
+    area: str
+    horizon_hours: int = 24
+    last_readings: Optional[List[float]] = None
+
+
+@app.post("/predict", summary="Predicción de consumo mediante modelo ML (Experimental)")
+def predict_consumption(request: PredictRequest):
+    """
+
+    Flujo :
+      1. Carga del modelo desde disco (pickle.load)
+      2. Preprocesamiento de lecturas históricas del área
+      3. Construcción de features (media, tendencia, hora, día)
+      4. Inferencia con el modelo 
+      5. Retorno de predicciones por hora para el horizonte indicado
+
+    """
+    if request.area not in AREAS:
+        raise HTTPException(status_code=404, detail=f"Área no encontrada: {request.area}")
+
+    # Paso 1: carga del modelo
+    # En producción:
+    #   import pickle
+    #   with open(f"models/{request.area}_forecast.pkl", "rb") as f:
+    #       model = pickle.load(f)
+    model_path = f"models/{request.area}_forecast.pkl"
+    model_loaded = True  # Simulación — no carga archivo real
+
+    # Paso 2: Obtener lecturas base del área
+    profile = AREAS[request.area]
+    input_readings = request.last_readings or [
+        round(profile.base * random.uniform(0.8, 1.2), 4) for _ in range(24)
+    ]
+
+    # Paso 3: Construcción de features
+    mean_kwh = sum(input_readings) / len(input_readings)
+    trend = (input_readings[-1] - input_readings[0]) / len(input_readings)
+    features = {
+        "mean_24h_kwh": round(mean_kwh, 4),
+        "trend_per_step": round(trend, 6),
+        "last_kwh": round(input_readings[-1], 4),
+        "peak_hour": profile.peak_hour,
+        "peak_factor": profile.peak_factor,
+    }
+
+    
+    now_hour = datetime.now().hour
+    predicted = []
+    for i in range(request.horizon_hours):
+        h = (now_hour + i) % 24
+        distance = abs(h - profile.peak_hour)
+        if distance > 12:
+            distance = 24 - distance
+        bell = math.exp(-0.5 * (distance / 3.0) ** 2)
+        factor = 1.0 + (profile.peak_factor - 1.0) * bell
+        val = round(max(0.0, mean_kwh * factor + trend * i + random.gauss(0, 0.05 * mean_kwh)), 4)
+        predicted.append(val)
+
+    # Paso 5: Respuesta
+    return {
+        "status": "simulated",
+        "area": request.area,
+        "model_path": model_path,
+        "model_loaded": model_loaded,
+        "horizon_hours": request.horizon_hours,
+        "features": features,
+        "predictions_kwh": predicted,
+        "total_predicted_kwh": round(sum(predicted), 4),
+        "warning": "Endpoint experimental. Modelo .pkl no integrado aún. Datos simulados.",
+    }
 
 
 if __name__ == "__main__":
