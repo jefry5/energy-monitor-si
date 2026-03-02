@@ -1,136 +1,404 @@
-# ⚡ Energy Monitor Pro v3 + Gemini AI
+<div align="center">
 
-> **Sistema Inteligente de Monitoreo y Gestión Energética**  
-> Proyecto académico para el curso de **Sistemas Inteligentes** — Universidad Nacional Mayor de San Marcos (UNMSM)
+# ⚡ Energy Monitor SI
 
-[![Python](https://img.shields.io/badge/Python-3.10%2B-blue?logo=python)](https://python.org)
-[![n8n](https://img.shields.io/badge/n8n-v2.7.5-orange)](https://n8n.io)
-[![Docker](https://img.shields.io/badge/Docker-Compose-blue?logo=docker)](https://docker.com)
-[![MQTT](https://img.shields.io/badge/MQTT-Mosquitto-purple)](https://mosquitto.org)
-[![License](https://img.shields.io/badge/Licencia-Académica-green)]()
+### Sistema Inteligente para el Monitoreo y Gestión del Consumo Energético
+
+[![n8n](https://img.shields.io/badge/Orchestration-n8n-FF6D6D?style=for-the-badge&logo=n8n&logoColor=white)](https://n8n.io/)
+[![Docker](https://img.shields.io/badge/Deploy-Docker_Compose-2496ED?style=for-the-badge&logo=docker&logoColor=white)](https://docs.docker.com/compose/)
+[![PostgreSQL](https://img.shields.io/badge/Database-PostgreSQL-4169E1?style=for-the-badge&logo=postgresql&logoColor=white)](https://www.postgresql.org/)
+[![InfluxDB](https://img.shields.io/badge/TimeSeries-InfluxDB-22ADF6?style=for-the-badge&logo=influxdb&logoColor=white)](https://www.influxdata.com/)
+[![MQTT](https://img.shields.io/badge/Protocol-MQTT-660066?style=for-the-badge&logo=mqtt&logoColor=white)](https://mqtt.org/)
+[![Telegram](https://img.shields.io/badge/Alerts-Telegram_Bot-26A5E4?style=for-the-badge&logo=telegram&logoColor=white)](https://core.telegram.org/bots)
+
+<br/>
+
+> Plataforma multiagente orientada a eventos para la detección temprana de anomalías energéticas, clasificación de severidad, diagnóstico con LLM y respuesta operativa automática en entornos universitarios.
+
+<br/>
+
+[![UNMSM](https://img.shields.io/badge/Universidad-UNMSM-8B0000?style=flat-square)](https://www.unmsm.edu.pe/)
+[![Curso](https://img.shields.io/badge/Curso-Sistemas_Inteligentes-4CAF50?style=flat-square)]()
+[![Semestre](https://img.shields.io/badge/Semestre-2026--0-orange?style=flat-square)]()
+
+</div>
 
 ---
 
 ## 📋 Tabla de Contenidos
 
-- [¿Qué es este proyecto?](#-qué-es-este-proyecto)
-- [Arquitectura del Sistema](#-arquitectura-del-sistema)
-- [Flujo de Datos](#-flujo-de-datos)
+- [Descripción General](#-descripción-general)
+- [Arquitectura del Sistema](#️-arquitectura-del-sistema)
+- [Stack Tecnológico](#-stack-tecnológico)
+- [Módulo Inteligente](#-módulo-inteligente)
+- [Agentes Especialistas](#-agentes-especialistas)
+- [Workflows de n8n](#-workflows-de-n8n)
+- [Modelo de Datos](#-modelo-de-datos)
+- [Instalación y Despliegue](#-instalación-y-despliegue)
+- [Configuración](#️-configuración)
+- [Pruebas](#-pruebas)
 - [Estructura del Repositorio](#-estructura-del-repositorio)
-- [Tecnologías Utilizadas](#-tecnologías-utilizadas)
-- [Modos de Simulación](#-modos-de-simulación)
-- [Áreas Simuladas](#-áreas-simuladas)
-- [Actuadores Virtuales — Relay Manager](#-actuadores-virtuales--relay-manager)
-- [API REST — Endpoints](#-api-rest--endpoints)
-- [Orquestación con n8n](#-orquestación-con-n8n)
-- [Comandos de Telegram](#-comandos-de-telegram)
-- [Requisitos Previos](#-requisitos-previos)
-- [Instalación y Configuración](#-instalación-y-configuración)
-- [Variables de Entorno](#-variables-de-entorno)
-- [Infraestructura Docker](#-infraestructura-docker)
-- [Contribuidores](#-contribuidores)
+- [Equipo](#-equipo)
 
 ---
 
-## 🧠 ¿Qué es este proyecto?
+## 🔍 Descripción General
 
-**Energy Monitor Pro v3** es un sistema completo de monitoreo energético inteligente que simula una red de sensores IoT distribuidos en distintas áreas de un edificio universitario o instalación industrial. Su propósito es demostrar cómo integrar tecnologías modernas de automatización, inteligencia artificial y comunicación en tiempo real para detectar anomalías, predecir consumos y gestionar el suministro eléctrico de forma autónoma.
+El consumo eléctrico en infraestructuras universitarias suele monitorearse de forma tardía y reactiva, con escasa trazabilidad para detectar derroches, fallas eléctricas o patrones anómalos. El costo correctivo se incurre cuando el incidente ya afectó el servicio.
 
-El sistema no requiere hardware físico: todo el comportamiento de los sensores es simulado por software con patrones realistas basados en perfiles horarios, factores estacionales y modos de falla configurables.
+**Energy Monitor SI** resuelve este problema mediante un sistema inteligente orientado a eventos que:
 
-### Capacidades principales
+- 📡 **Observa** lecturas energéticas por área vía MQTT en tiempo real
+- 📊 **Mantiene** una línea base adaptativa por Media Móvil Exponencial (EMA)
+- 🚨 **Detecta y clasifica** desviaciones en tres niveles: `Normal`, `Advertencia` y `Crítico`
+- 🤖 **Produce** diagnósticos textuales con Gemini LLM
+- ⚡ **Coordina** respuestas automáticas o semiautomáticas mediante flujos n8n
+- 🧠 **Crea memoria operacional** mediante tablas de historial, incidentes, correlaciones y decisiones de agentes
 
-- Simulación avanzada de sensores con **7 modos de comportamiento** distintos (normal, anomalías, fallos graduales, intermitentes, nocturnos, flood y fallo total de sensor)
-- Comunicación **bidireccional** vía MQTT: los sensores publican datos **y** reciben comandos de control
-- **Actuadores virtuales (relés)** que permiten cortar o restaurar el suministro eléctrico por área de forma remota
-- Detección automática de anomalías con diagnóstico inteligente mediante **Google Gemini AI**
-- Almacenamiento dual: histórico estructurado en **PostgreSQL** y métricas de series temporales en **InfluxDB**
-- Notificaciones y control interactivo a través de un **Bot de Telegram**
-- Acceso externo seguro sin abrir puertos mediante **Cloudflare Tunnels**
-- Endpoint experimental de predicción de consumo con modelo ML (`.pkl`)
+### Áreas Monitoreadas
+
+El sistema cubre las siguientes áreas funcionales del edificio universitario:
+
+| # | Área |
+|---|------|
+| 1 | Laboratorio de Cómputo |
+| 2 | Aulas Teóricas |
+| 3 | Biblioteca |
+| 4 | Cafetería |
+| 5 | Oficinas Administrativas |
+| 6 | Sala de Servidores |
+| 7 | Estacionamiento |
+| 8 | Auditorio |
+| 9 | Gimnasio |
+| 10 | Laboratorio de Química |
 
 ---
 
 ## 🏗️ Arquitectura del Sistema
 
 ```
-┌─────────────────────────────────────────────────────────────────────────┐
-│                        CAPA DE PRESENTACIÓN                              │
-│                                                                           │
-│         Bot de Telegram  ◄──────────────►  Dashboard HTML               │
-│         (Alertas · Reportes · Control)       (Tiempo Real)               │
-└──────────────────────────────┬──────────────────────────────────────────┘
-                               │ HTTP / Webhook
-┌──────────────────────────────▼──────────────────────────────────────────┐
-│                      MOTOR DE ORQUESTACIÓN                               │
-│                                                                           │
-│                         n8n  (Self-Hosted)                               │
-│                                                                           │
-│   ┌──────────────┐  ┌───────────────┐  ┌────────────────┐               │
-│   │  Detección   │  │  Integración  │  │   Reportes +   │               │
-│   │  Anomalías   │  │  Gemini AI    │  │   Exportación  │               │
-│   └──────────────┘  └───────────────┘  └────────────────┘               │
-└──────────┬───────────────────────────────────────┬──────────────────────┘
-           │ MQTT Subscribe                         │ HTTP / REST
-┌──────────▼───────────────┐            ┌──────────▼──────────────────────┐
-│     MQTT Broker           │            │       Google Gemini AI           │
-│     (Mosquitto)           │            │   Diagnóstico + Predicción IA   │
-│                           │            └─────────────────────────────────┘
-│  Tópicos de datos:        │
-│  edificio/{area}/consumo  │            ┌─────────────────────────────────┐
-│  edificio/summary         │            │         Cloudflare Tunnels       │
-│                           │            │   (Acceso externo sin puertos)   │
-│  Tópicos de control:      │            └─────────────────────────────────┘
-│  edificio/{area}/comando  │
-│  edificio/system/comando  │
-└──────────┬────────────────┘
-           │ MQTT Publish / Subscribe
-┌──────────▼──────────────────────────────────────────────────────────────┐
-│                    SIMULADOR DE SENSORES  (Python)                        │
-│                       sensor_sim.py — Pro v3                             │
-│                                                                           │
-│  • 10 áreas con perfiles realistas de consumo                            │
-│  • 7 modos de simulación configurables por variable de entorno           │
-│  • Relay Manager — actuadores virtuales por área                         │
-│  • Curva gaussiana horaria + factor estacional (clima Perú)              │
-│  • Métricas: kWh · Voltaje · Corriente · Factor de Potencia              │
-│              Temperatura · Humedad · Calidad · Nº de Secuencia           │
-│  • Last Will Testament para detección de caída del sistema               │
-│  • API REST experimental con endpoint /predict (ML)                      │
-└───────────────────┬──────────────────────────────────────────────────────┘
-                    │
-        ┌───────────┴───────────┐
-        │                       │
-┌───────▼──────────┐   ┌────────▼─────────┐
-│   PostgreSQL      │   │     InfluxDB      │
-│                   │   │                   │
-│  • Historial de   │   │  • Series de      │
-│    consumos       │   │    tiempo         │
-│  • Anomalías      │   │  • Métricas de    │
-│  • Estados del    │   │    sensores       │
-│    sistema        │   │  • Dashboards     │
-└───────────────────┘   └───────────────────┘
+┌─────────────────────────────────────────────────────────────────────┐
+│                     CAPA DE INGESTA                                  │
+│  Simulador / Sensores IoT  ──►  Mosquitto (MQTT Broker)              │
+└──────────────────────────────────┬──────────────────────────────────┘
+                                   │
+                                   ▼
+┌─────────────────────────────────────────────────────────────────────┐
+│                  CAPA DE ORQUESTACIÓN (n8n)                          │
+│                                                                      │
+│   Energía-Monitor-Pro-v2                                             │
+│   ┌─────────────────────────────────────────────────────────┐       │
+│   │  EMA Calc  →  Severidad  →  Diagnóstico LLM  →  Alertas │       │
+│   └──────────────────────────────┬──────────────────────────┘       │
+│                                  │                                   │
+│              Agente-Orquestador  ▼                                   │
+│   ┌──────────┐ ┌──────────┐ ┌──────────┐ ┌──────────┐             │
+│   │Diagnóst. │ │Correlac. │ │Mantenim. │ │Resoluc.  │             │
+│   └──────────┘ └──────────┘ └──────────┘ └──────────┘             │
+│                                                                      │
+│   Watchdog  │  Reporte Diario  │  Telegram Bot Control              │
+└─────────────────────────────────────────────────────────────────────┘
+                    │                          │
+          ┌─────────▼──────────┐    ┌─────────▼──────────┐
+          │   PERSISTENCIA     │    │  SERVICIOS EXTERNOS │
+          │  PostgreSQL        │    │  Gemini API (LLM)   │
+          │  InfluxDB          │    │  Telegram Bot API   │
+          └────────────────────┘    └────────────────────┘
 ```
 
 ---
 
-## 🔄 Flujo de Datos
+## 🛠 Stack Tecnológico
 
-El ciclo completo de operación del sistema funciona de la siguiente manera:
+| Componente | Tecnología | Función |
+|---|---|---|
+| **Orquestación** | n8n | Motor central de workflows y agentes |
+| **Base de datos transaccional** | PostgreSQL | Historial operacional, incidentes, trazabilidad |
+| **Series de tiempo** | InfluxDB | Métricas continuas de consumo |
+| **Broker de mensajería** | Mosquitto (MQTT) | Transporte de lecturas IoT |
+| **Diagnóstico IA** | Gemini API | Generación de diagnósticos JSON y análisis textual |
+| **Notificaciones** | Telegram Bot API | Alertas, reportes e interacción operativa |
+| **Dashboard local** | Python + custom | Control de simulación y relés por área |
+| **Infraestructura** | Docker Compose | Orquestación de contenedores y servicios |
 
-**1. Generación de datos** — El simulador produce lecturas cada N segundos (configurable) para cada área aplicando: perfil base del área + factor horario gaussiano + factor estacional + ruido gaussiano + modo de simulación activo.
+---
 
-**2. Publicación MQTT** — Cada lectura se serializa en JSON y se publica en el tópico `edificio/{area}/consumo`. Al final de cada ciclo se publica un resumen en `edificio/summary` con el total de kWh del edificio.
+## 🧠 Módulo Inteligente
 
-**3. Recepción en n8n** — n8n está suscrito al broker MQTT y recibe cada mensaje. Los workflows evalúan umbrales de consumo, voltaje y temperatura para determinar si existe una anomalía.
+### Algoritmo de Línea Base — Media Móvil Exponencial (EMA)
 
-**4. Diagnóstico con IA** — Si se detecta una anomalía, n8n envía los datos a Google Gemini, que genera un diagnóstico en lenguaje natural indicando la causa probable y las acciones recomendadas.
+El núcleo de decisión combina **cuatro capas** de inteligencia:
 
-**5. Persistencia** — Los datos se almacenan en PostgreSQL (historial consultable) e InfluxDB (visualización temporal).
+```
+1. Línea base adaptativa (EMA)
+2. Reglas explícitas de severidad
+3. Enriquecimiento por agentes especialistas
+4. Generación de texto por LLM (Gemini)
+```
 
-**6. Notificación** — Las alertas críticas se envían automáticamente al Bot de Telegram. El usuario también puede consultar el estado, pedir reportes o enviar comandos de control desde Telegram.
+#### Fórmula de cálculo
 
-**7. Control bidireccional** — n8n o el usuario vía Telegram pueden enviar comandos al broker MQTT en el tópico `edificio/{area}/comando`. El simulador los recibe, actualiza el estado del relé virtual del área y publica un ACK de confirmación.
+```
+          ┌ lectura_t         si es la primera lectura
+EMA_t  =  ┤ EMA_(t-1)         si modo es anómalo o relay_off
+          └ α·lectura_t + (1-α)·EMA_(t-1)  en operación normal
+
+desviación_t = ((lectura_t - base_t) / base_t) × 100
+```
+
+> `α = 0.2` — Factor de suavizado. La base se congela en modos anómalos para no contaminar la línea base.
+
+#### Umbrales de severidad
+
+```
+┌─────────────────────────────────────────────────────────┐
+│  Lecturas 1–50    →  WARMUP  (siempre Normal)           │
+│  Desviación ≤ 35%  →  ✅ NORMAL                         │
+│  35% < desv ≤ 80%  →  ⚠️  ADVERTENCIA                  │
+│  Desviación > 80%  →  🚨 CRÍTICO                        │
+│  Desviación > 150% (no simulación, no servidores)       │
+│                    →  ⛔ AUTO-CORTE DE EMERGENCIA        │
+└─────────────────────────────────────────────────────────┘
+```
+
+#### Pseudocódigo del motor de decisión
+
+```python
+# Entrada: area, kwh, timestamp, modo
+ema_anterior, contador = leer_estado(area)
+
+if contador == 0:
+    ema_nuevo = kwh
+elif modo in ["anomalo", "relay_off"]:
+    ema_nuevo = ema_anterior
+    base = ema_anterior
+else:
+    ema_nuevo = alpha * kwh + (1 - alpha) * ema_anterior
+    base = ema_nuevo
+
+contador += 1
+desviacion = (kwh - base) / base * 100
+
+if contador <= 50:
+    severidad = "Normal"
+elif desviacion > 80:
+    severidad = "Critico"
+elif desviacion > 35:
+    severidad = "Advertencia"
+else:
+    severidad = "Normal"
+
+guardar_historial(area, kwh, ema_nuevo, severidad)
+
+if severidad != "Normal":
+    diagnostico = gemini.diagnosticar(area, kwh, base, severidad)
+    registrar_anomalia(diagnostico)
+    telegram.alertar(diagnostico)
+    orquestador.enviar(evento)
+```
+
+---
+
+## 🤖 Agentes Especialistas
+
+El sistema implementa una arquitectura **multiagente** donde cada agente tiene responsabilidades específicas:
+
+### 🔍 Agente de Diagnóstico
+Analiza el historial de las últimas 24 horas y clasifica el patrón de consumo:
+
+| Patrón | Descripción |
+|---|---|
+| `abnormally_low` | Consumo inusualmente bajo |
+| `sustained` | Consumo alto sostenido |
+| `accelerating` | Consumo en aceleración |
+| `punctual` | Pico puntual |
+| `moderate` | Desviación moderada |
+
+### 🔗 Agente de Correlación
+- Requiere **≥ 3 áreas anómalas** en una ventana de **5 minutos**
+- Aplica **cooldown de 10 minutos** entre correlaciones
+- Emite alerta consolidada con causa probable sistémica
+
+### 🔧 Agente de Mantenimiento
+- Detecta crecimiento promedio de **≥ 1.5% diario** durante **≥ 5 días**
+- Descarta spikes mayores al 50% para evitar falsos positivos
+- Genera órdenes preventivas con prioridad: `baja` → `media` → `alta` → `urgente`
+
+### 🛠️ Agente de Resolución
+| Condición | Acción |
+|---|---|
+| Consumo vuelve al 20% del EMA | ✅ Cierra incidente |
+| Incidente supera 120 minutos | 🔺 Escala automáticamente |
+| Estado intermedio | 👁️ Mantiene en observación |
+
+### 📊 Agente de Reportes
+Genera reportes automáticos en tres modalidades:
+- **Turno** — al inicio de cada turno (06:00, 14:00, 22:00)
+- **Post-incidente** — tras el cierre de un incidente crítico
+- **Semanal** — resumen consolidado de 7 días
+
+---
+
+## ⚙️ Workflows de n8n
+
+| Workflow | Trigger | Descripción |
+|---|---|---|
+| `Energía-Monitor-Pro-v2` | MQTT `edificio/+/consumo` | Ingesta, EMA, severidad, diagnóstico LLM, alertas y auto-corte |
+| `Agente-Orquestador` | Webhook `agentorchestrator` | Deduplica alertas y enruta a agentes especialistas |
+| `Agente-Diagnóstico` | Webhook `agentdiagnosis` | Clasifica patrones con contexto de 24h |
+| `Agente-Correlación` | Webhook `agentcorrelation` | Consolida eventos en múltiples áreas simultáneas |
+| `Agente-Mantenimiento` | Webhook `agentmaintenance` | Detecta degradación gradual y crea orden preventiva |
+| `Agente-Resolución` | Webhook `agentresolution` | Abre, cierra o escala incidentes |
+| `Agente-Reportes` | Webhook + cron 06/14/22h | Reportes de turno, post-incidente y semanal |
+| `Monitor-Salud-Sistema` | Programado | Detecta sensores sin reportar y consumo persistente |
+| `Reporte-DiarioAutomático` | Cron 08:00 | Reporte de 24h con análisis breve de IA |
+| `Telegram-Bot-Control` | Telegram Trigger | Atención al operador, exportación, predicción y control operativo |
+
+---
+
+## 🗄️ Modelo de Datos
+
+```sql
+-- Línea base por área
+ema_estado              (area, ema_valor, lectura_num, updated_at)
+
+-- Lecturas registradas
+energy_history          (id, area, kwh, ema, desviacion, severidad, modo, timestamp)
+
+-- Eventos anómalos
+anomalias               (id, area, kwh, base, severidad, diagnostico_json, timestamp)
+
+-- Control de deduplicación
+alert_history           (id, area, severidad, hash, created_at)
+
+-- Incidentes multiárea
+correlaciones           (id, areas, causa_probable, inicio, fin, estado)
+
+-- Órdenes preventivas
+mantenimiento_preventivo(id, area, prioridad, descripcion, estado, created_at)
+
+-- Ciclo de vida de incidentes
+incidentes              (id, area, severidad, apertura, cierre, estado, notas)
+
+-- Auditoría de decisiones
+agent_decisions         (id, agente, accion, contexto_json, timestamp)
+```
+
+---
+
+## 🚀 Instalación y Despliegue
+
+### Prerrequisitos
+
+- [Docker](https://docs.docker.com/get-docker/) y [Docker Compose](https://docs.docker.com/compose/install/) instalados
+- Cuenta de [Telegram](https://telegram.org/) para crear un Bot
+- API Key de [Google Gemini](https://ai.google.dev/) (tier gratuito disponible)
+
+### Paso 1 — Clonar el repositorio
+
+```bash
+git clone https://github.com/jefry5/energy-monitor-si.git
+cd energy-monitor-si
+```
+
+### Paso 2 — Configurar variables de entorno
+
+```bash
+cp .env.example .env
+# Editar .env con tus credenciales (ver sección Configuración)
+```
+
+### Paso 3 — Levantar la infraestructura
+
+```bash
+docker compose up -d
+```
+
+Los siguientes servicios se iniciarán automáticamente:
+
+| Servicio | Puerto | Descripción |
+|---|---|---|
+| n8n | `5678` | Motor de workflows |
+| PostgreSQL | `5432` | Base de datos principal |
+| InfluxDB | `8086` | Series de tiempo |
+| Mosquitto | `1883` | Broker MQTT |
+| Dashboard | `8080` | Panel de control local |
+| Cloudflared | — | Túnel para webhooks externos |
+
+### Paso 4 — Inicializar la base de datos
+
+```bash
+# Ejecutar el script de inicialización de tablas
+docker exec -it energy-monitor-postgres psql -U postgres -d energydb -f /init/schema.sql
+```
+
+### Paso 5 — Importar workflows en n8n
+
+1. Acceder a `http://localhost:5678`
+2. Ir a **Settings → Import workflows**
+3. Importar los 10 archivos `.json` desde la carpeta `n8n/workflows/`
+4. Activar cada workflow y verificar los webhooks de los agentes
+
+### Paso 6 — Verificar el sistema
+
+```bash
+# Publicar una lectura de prueba vía MQTT
+mosquitto_pub -h localhost -t "edificio/laboratorio_computo/consumo" \
+  -m '{"area":"laboratorio_computo","kwh":45.2,"timestamp":"2026-01-01T10:00:00Z","modo":"normal"}'
+```
+
+✅ Si el sistema está operativo, recibirás confirmación en Telegram y verás registros en PostgreSQL.
+
+---
+
+## ⚙️ Configuración
+
+Edita el archivo `.env` con los siguientes valores:
+
+```env
+# PostgreSQL
+POSTGRES_USER=postgres
+POSTGRES_PASSWORD=your_password
+POSTGRES_DB=energydb
+
+# InfluxDB
+INFLUXDB_URL=http://influxdb:8086
+INFLUXDB_TOKEN=your_influx_token
+INFLUXDB_ORG=energy-monitor
+INFLUXDB_BUCKET=energy
+
+# MQTT
+MQTT_HOST=mosquitto
+MQTT_PORT=1883
+
+# Telegram Bot
+TELEGRAM_BOT_TOKEN=your_bot_token
+TELEGRAM_CHAT_ID=your_chat_id
+
+# Gemini API
+GEMINI_API_KEY=your_gemini_api_key
+GEMINI_MODEL=gemini-pro
+
+# n8n
+N8N_BASIC_AUTH_USER=admin
+N8N_BASIC_AUTH_PASSWORD=your_n8n_password
+```
+
+---
+
+## 🧪 Pruebas
+
+El sistema incluye 7 escenarios de prueba funcional:
+
+| Escenario | Preparación | Resultado Esperado |
+|---|---|---|
+| ✅ **Normal** | Lecturas dentro de banda histórica | EMA actualizado, sin alertas, historial registrado |
+| 🚨 **Extremo** | Pico sostenido > 80% sobre la base | Clasificación Crítico, alerta en Telegram, fila en `anomalias` |
+| ❌ **Erróneo** | Cortar publicación de un área | Watchdog reporta sensor ausente |
+| 🔄 **Duplicado** | Repetir misma anomalía en < 5 min | Orquestador deduplica, fila en `alert_history` |
+| 🔗 **Correlación** | Anomalías en ≥ 3 áreas en 5 min | Alerta consolidada, fila en `correlaciones` |
+| 📉 **Degradación** | Crecimiento gradual por varios días | Orden preventiva en `mantenimiento_preventivo` |
+| 🔓 **Resolución** | Área crítica vuelve a normalidad | Incidente cerrado o escalado en `incidentes` |
 
 ---
 
@@ -138,281 +406,57 @@ El ciclo completo de operación del sistema funciona de la siguiente manera:
 
 ```
 energy-monitor-si/
-│
-├── src/                              # Código fuente principal
-│   ├── simulator/
-│   │   └── sensor_sim.py             # Simulador Pro v3 + API REST
-│   └── dashboard/
-│       └── index.html                # Dashboard de visualización en tiempo real
-│
-├── n8n/
-│   └── workflows/                    # Workflows exportados de n8n (.json)
-│
-├── infra/                            # Configuración de infraestructura
-│
-├── .agents/
-│   └── skills/                       # Habilidades del agente AI
-│
-├── docker-compose.yml                # Orquestación completa de contenedores
-├── requirements.txt                  # Dependencias Python del simulador
-├── requirements-dashboard.txt        # Dependencias del dashboard
-├── .env.example                      # Plantilla de variables de entorno
-├── skills-lock.json                  # Lock de habilidades del agente
-└── README.md                         # Este archivo
+├── 📁 data/
+│   ├── grafana/            # Configuración de dashboards Grafana
+│   └── influxdb/           # Datos persistidos de InfluxDB
+├── 📁 infra/
+│   └── init/               # Scripts de inicialización de BD
+├── 📁 n8n/
+│   ├── data/               # Datos persistidos de n8n
+│   └── workflows/          # 10 workflows exportados (.json)
+│       ├── energia-monitor-pro-v2.json
+│       ├── agente-orquestador.json
+│       ├── agente-diagnostico.json
+│       ├── agente-correlacion.json
+│       ├── agente-mantenimiento.json
+│       ├── agente-resolucion.json
+│       ├── agente-reportes.json
+│       ├── monitor-salud-sistema.json
+│       ├── reporte-diario-automatico.json
+│       └── telegram-bot-control.json
+├── 📁 src/
+│   ├── dashboard/          # Panel de control local
+│   └── simulator/          # Simulador de sensores MQTT
+├── 📁 venv/
+├── 📄 .env.example
+├── 📄 .gitignore
+├── 📄 docker-compose.yml
+├── 📄 README.md
+├── 📄 requirements.txt
+└── 📄 requirements-dashboard.txt
 ```
 
 ---
 
-## 🛠️ Tecnologías Utilizadas
+## 👥 Equipo
 
-| Capa | Tecnología | Rol en el sistema |
-|------|------------|-------------------|
-| **Simulador / Lógica** | Python 3.10+ | Generación de datos sintéticos y lógica de simulación |
-| **API REST (experimental)** | FastAPI + Pydantic | Endpoint `/predict` para integración futura con modelos ML |
-| **Comunicación IoT** | MQTT — paho-mqtt | Transporte de mensajes sensor → n8n y comandos → sensor |
-| **Broker MQTT** | Eclipse Mosquitto | Hub central de mensajería pub/sub |
-| **Orquestación** | n8n v2.7.5 (self-hosted) | Motor de workflows, detección de anomalías y lógica de negocio |
-| **Inteligencia Artificial** | Google Gemini AI | Diagnóstico inteligente de anomalías y predicción de consumo |
-| **Base de datos relacional** | PostgreSQL + psycopg2 | Historial de consumos, anomalías y estados del sistema |
-| **Series temporales** | InfluxDB + influxdb-client | Almacenamiento y visualización de métricas en el tiempo |
-| **Notificaciones** | Telegram Bot API | Alertas, reportes interactivos y control remoto |
-| **Contenedores** | Docker + Docker Compose | Orquestación y aislamiento de todos los servicios |
-| **Acceso externo** | Cloudflare Tunnels | HTTPS seguro sin exponer puertos al exterior |
-| **Dashboard** | HTML + JavaScript | Visualización de consumos en tiempo real |
-| **Variables de entorno** | python-dotenv | Gestión segura de credenciales y configuración |
+| Nombre | Rol |
+|---|---|
+| Jefferson Alexander Marquez Rosasco | Desarrollador |
+| Cristian Ricardo Morales Damasco | Desarrollador |
+| Alessandro Jesus Torres Tamariz | Desarrollador |
+| Víctor Daniel Celadita Romero | Desarrollador |
+
+**Docentes:** Gelber Christian Uscuchagua Flores · Herminio Paucar Curasma
+
+**Institución:** Universidad Nacional Mayor de San Marcos — Facultad de Ingeniería de Sistemas e Informática
+
+**Curso:** Sistemas Inteligentes · Semestre 2026-0 · Grupo 3
 
 ---
 
-## 🎛️ Modos de Simulación
+<div align="center">
 
-El simulador soporta 7 modos de operación configurables mediante la variable de entorno `SIM_MODE`. Solo el área definida en `ANOMALY_AREA` recibe el comportamiento especial; el resto opera en modo normal.
+Desarrollado con ❤️ para la **UNMSM** · Facultad de Ingeniería de Sistemas e Informática
 
-| Modo | Valor `.env` | Comportamiento |
-|------|-------------|----------------|
-| **Normal** | `normal` | Lecturas realistas con variabilidad gaussiana y perfiles horarios |
-| **Anomalía (pico)** | `anomaly` | El área objetivo genera consumo 2.8× el valor base de forma sostenida |
-| **Fallo de sensor** | `sensor_failure` | El área objetivo deja de publicar lecturas completamente |
-| **Deriva gradual** | `gradual_drift` | El consumo sube un 2% por ciclo hasta llegar a 3× (simula falla mecánica lenta) |
-| **Intermitente** | `intermittent` | El área alterna entre publicar y no publicar (simula conexión inestable) |
-| **Flood (prueba de carga)** | `flood` | Cada ciclo publica 10× el número normal de mensajes |
-| **Anomalía nocturna** | `night_anomaly` | Pico de 3.5× solo entre las 22:00 y las 06:00 |
-
----
-
-## 🏢 Áreas Simuladas
-
-El edificio está compuesto por 10 áreas con perfiles individuales de consumo:
-
-| Área | kWh base (día) | kWh base (noche) | Piso | Dispositivos | Hora pico |
-|------|---------------|-----------------|------|-------------|-----------|
-| Laboratorio de cómputo | 8.5 | 1.2 | 2 | 40 | 14:00 |
-| Aulas teóricas | 3.2 | 0.4 | 1 | 12 | 10:00 |
-| Biblioteca | 4.8 | 0.8 | 3 | 20 | 11:00 |
-| Cafetería | 6.1 | 1.5 | 1 | 15 | 12:00 |
-| Oficinas administrativas | 3.9 | 0.3 | 4 | 18 | 09:00 |
-| Sala de servidores | 12.0 | 11.5 | 2 | 8 | 15:00 |
-| Estacionamiento | 1.2 | 0.6 | 0 | 30 | 08:00 |
-| Auditorio | 5.5 | 0.2 | 1 | 6 | 16:00 |
-| Gimnasio | 4.2 | 0.5 | 1 | 10 | 17:00 |
-| Laboratorio de química | 7.8 | 2.1 | 3 | 22 | 13:00 |
-
-Cada perfil aplica una **curva gaussiana** centrada en la hora pico para modelar el consumo de forma continua y realista, combinado con un **factor estacional** ajustado al clima de Perú (verano diciembre-marzo, invierno junio-septiembre).
-
----
-
-## ⚡ Actuadores Virtuales — Relay Manager
-
-El sistema implementa un gestor de relés virtuales (`RelayManager`) que permite controlar el suministro eléctrico por área de forma remota. Cada área tiene un relé que puede estar en estado `ENCENDIDO` o `APAGADO`.
-
-**Comandos disponibles vía MQTT** (tópico: `edificio/{area}/comando`):
-
-```json
-// Cortar energía de un área específica
-{ "accion": "cortar_energia", "motivo": "mantenimiento", "origen": "telegram" }
-
-// Restaurar energía de un área
-{ "accion": "restaurar_energia", "motivo": "fin_mantenimiento", "origen": "n8n" }
-
-// Corte de emergencia de todo el edificio (tópico: edificio/system/comando)
-{ "accion": "corte_emergencia", "motivo": "alarma_incendio", "origen": "automatico" }
-
-// Consultar estado de todos los relés
-{ "accion": "status_rele" }
-```
-
-Cuando un relé está en `APAGADO`, el área publica lecturas con `kwh: 0.0` y `quality: "relay_off"`. El sistema confirma cada cambio con un ACK en `edificio/system/relay_ack`.
-
----
-
-## 🌐 API REST — Endpoints
-
-El simulador expone una API REST mediante FastAPI. La documentación interactiva estará disponible en `http://localhost:8000/docs` cuando la API esté activa.
-
-| Método | Ruta | Descripción |
-|--------|------|-------------|
-| `GET` | `/` | Estado general del simulador y configuración activa |
-| `GET` | `/status` | Última lectura disponible por cada área |
-| `POST` | `/simulate` | Genera y publica una lectura manual con área y modo especificables |
-| `GET` | `/history` | Historial reciente (hasta 500 lecturas, configurable con `?limit=N`) |
-| `POST` | `/predict` |  Predicción de consumo mediante modelo ML serializado `.pkl` |
-
-### Endpoint `/predict` — Detalle
-
-
-```json
-// Request
-POST /predict
-{
-  "area": "sala_servidores",
-  "horizon_hours": 24,
-  "last_readings": [12.1, 11.8, 12.3, 11.9]
-}
-
-// Response
-{
-  "status": "simulated",
-  "area": "sala_servidores",
-  "model_path": "models/sala_servidores_forecast.pkl",
-  "features": { "mean_24h_kwh": 12.025, "trend_per_step": 0.066, ... },
-  "predictions_kwh": [...],
-  "total_predicted_kwh": 284.3,
-  "warning": "Endpoint . Modelo .pkl  integrado ."
-}
-```
-
----
-
-## 🔄 Orquestación con n8n
-
-n8n actúa como el cerebro del sistema. Los workflows se importan desde `n8n/workflows/` en el panel de n8n (`http://localhost:5678`).
-
-**Ingesta MQTT → Bases de Datos** recibe cada mensaje del broker y lo persiste en PostgreSQL e InfluxDB aplicando transformaciones de tipo y validación de campos.
-
-**Detección de Anomalías** evalúa cada lectura contra umbrales configurables. Si `kwh > umbral × 1.8`, `voltage < 200V` o `temperature > 40°C`, dispara el flujo de alerta.
-
-**Diagnóstico con Gemini AI** construye un prompt estructurado con los datos de la anomalía, obtiene el diagnóstico de Gemini (causa probable + acción recomendada) y lo almacena y envía a Telegram.
-
-**Bot de Telegram** maneja comandos entrantes del usuario, consulta PostgreSQL/InfluxDB y puede publicar comandos MQTT para controlar relés directamente desde el chat.
-
-**Reportes Programados** genera resúmenes diarios de consumo por área con costos estimados y emisiones de CO₂, enviándolos automáticamente al chat configurado.
-
----
-
-## 📱 Comandos de Telegram
-
-| Comando / Botón | Función |
-|----------------|---------|
-| `/start` | Menú interactivo principal |
-| 📊 **Estado en Vivo** | Carga actual por área con barras de progreso visual |
-| 📈 **Reporte 24h** | Consumo total, costos estimados (S/.) y emisiones de CO₂ |
-| 🚨 **Ver Anomalías** | Últimos incidentes con diagnóstico de la IA |
-| 🧠 **Predicción IA** | Consulta a Gemini sobre consumo esperado próximas 24h |
-| 💾 **Exportar CSV** | Descarga del historial crudo para análisis externo |
-| ⚡ **Control Relés** | Cortar o restaurar suministro por área (requiere confirmación) |
-
----
-
-## ✅ Requisitos Previos
-
-- **Docker Desktop** instalado y en ejecución
-- **Python 3.10+** (recomendado entorno virtual `venv`)
-- **Bot de Telegram** creado con [@BotFather](https://t.me/BotFather)
-- **Google Gemini API Key** en [Google AI Studio](https://aistudio.google.com/app/apikey)
-- **PowerShell** (Windows) para el script de inicio automático
-
----
-
-## ⚙️ Instalación y Configuración
-
-### 1. Clonar el repositorio
-
-```bash
-git clone https://github.com/jefry5/energy-monitor-si.git
-cd energy-monitor-si
-```
-
-### 2. Configurar variables de entorno
-
-```bash
-cp .env.example .env
-# Edita .env con tus credenciales
-```
-
-### 3. Instalar dependencias Python (desarrollo local)
-
-```bash
-python -m venv venv
-venv\Scripts\activate           # Windows
-source venv/bin/activate        # Linux / Mac
-
-pip install -r requirements.txt
-```
-
-### 4. Levantar todos los servicios
-
-```bash
-docker-compose up -d
-```
-
-O con el script automático en Windows:
-
-```powershell
-.\INICIAR_PROYECTO.ps1
-```
-
-### 5. Importar workflows en n8n
-
-Abre `http://localhost:5678` → Workflows → Import → selecciona los `.json` de `n8n/workflows/`.
-
-### 6. Verificar servicios activos
-
-| Servicio | URL / Puerto |
-|----------|-------------|
-| n8n Dashboard | `http://localhost:5678` |
-| Simulador API Docs | `http://localhost:8000/docs` |
-| InfluxDB UI | `http://localhost:8086` |
-| MQTT Broker | `localhost:1883` |
-| PostgreSQL | `localhost:5432` |
-
----
-
-## 🔐 Variables de Entorno
-
-| Variable | Descripción | Ejemplo |
-|----------|-------------|---------|
-| `GEMINI_API_KEY` | API Key de Google Gemini | `AIza...` |
-| `TELEGRAM_TOKEN` | Token del Bot de Telegram | `123456:ABC...` |
-| `TELEGRAM_CHAT_ID` | ID del chat destino de alertas | `987654321` |
-| `POSTGRES_DB` | Nombre de la base de datos | `energia_db` |
-| `POSTGRES_USER` | Usuario de PostgreSQL | `energia_user` |
-| `POSTGRES_PASSWORD` | Contraseña de PostgreSQL | `tu_password` |
-| `INFLUXDB_TOKEN` | Token de autenticación InfluxDB | `mi_token` |
-| `INFLUXDB_ORG` | Organización en InfluxDB | `energy_monitor` |
-| `INFLUXDB_BUCKET` | Bucket de almacenamiento | `sensores` |
-| `MQTT_BROKER` | Host del broker MQTT | `mosquitto` |
-| `MQTT_PORT` | Puerto MQTT | `1883` |
-| `SIM_MODE` | Modo de simulación activo | `normal` |
-| `ANOMALY_AREA` | Área que recibe el modo especial | `auditorio` |
-| `SIM_INTERVAL` | Segundos entre ciclos de publicación | `30` |
-| `BUILDING_ID` | Identificador del edificio | `edificio_principal` |
-| `TOPIC_PREFIX` | Prefijo de los tópicos MQTT | `edificio` |
-| `MQTT_QOS` | Nivel de calidad de servicio MQTT | `1` |
-
----
-
-## 🐳 Infraestructura Docker
-
-El `docker-compose.yml` define todos los servicios en una red interna compartida (`energy-net`):
-
-```
-Servicios:
-  ├── mosquitto      → MQTT Broker          (puerto 1883)
-  ├── postgres       → Base de datos        (puerto 5432)
-  ├── influxdb       → Series temporales    (puerto 8086)
-  ├── n8n            → Motor de workflows   (puerto 5678)
-  └── sensor-sim     → Simulador Python     (puerto 8000)
-```
-
-Todos los servicios se comunican entre sí por nombre de servicio dentro de la red Docker interna.
-
----
+</div>
